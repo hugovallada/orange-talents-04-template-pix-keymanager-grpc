@@ -101,6 +101,21 @@ internal class CadastrarChavePixEndpointTest(
 
     }
 
+    @Test
+    internal fun `deve retornar um status INVALID ARGUMENT caso algum dado seja invalido`() {
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente("c56dfef4-7901-44ob-84e2-a2cefb15789")
+            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.cadastrarChave(request)
+        }. run {
+            assertEquals(Status.INVALID_ARGUMENT.code, status.code)
+            assertEquals("Um ou mais dados são inválidos", status.description)
+        }
+    }
+
     private fun gerarDadosContaResponse(): DadosContaResponse{
         return DadosContaResponse(
             tipo = TipoDeConta.CONTA_CORRENTE.name,
