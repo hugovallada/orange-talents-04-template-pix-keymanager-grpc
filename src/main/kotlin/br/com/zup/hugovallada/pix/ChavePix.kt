@@ -18,7 +18,7 @@ class ChavePix(
     val chave: String,
     @Enumerated(EnumType.STRING) @field:NotNull
     val tipoConta: TipoDeConta,
-    @OneToMany
+    @OneToMany(cascade = [CascadeType.MERGE])
     val conta: Conta
 ) {
     @Id @GeneratedValue
