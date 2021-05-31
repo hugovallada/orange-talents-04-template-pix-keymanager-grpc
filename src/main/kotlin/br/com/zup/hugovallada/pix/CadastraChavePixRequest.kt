@@ -3,15 +3,16 @@ package br.com.zup.hugovallada.pix
 import br.com.zup.hugovallada.TipoDeChave
 import br.com.zup.hugovallada.TipoDeConta
 import br.com.zup.hugovallada.conta.Conta
+import br.com.zup.hugovallada.utils.validacao.ValidUUID
 import io.micronaut.core.annotation.Introspected
 import java.util.*
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
 
-
+@Introspected
 data class CadastraChavePixRequest(
-    @field:NotBlank
+    @field:NotBlank @ValidUUID
     val clienteId: String,
     @field:NotNull
     val tipo: TipoDeChave?,

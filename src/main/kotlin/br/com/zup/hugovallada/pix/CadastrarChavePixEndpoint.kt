@@ -12,6 +12,7 @@ import io.micronaut.validation.Validated
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.transaction.Transactional
+import javax.validation.Valid
 
 @Singleton
 class CadastrarChavePixEndpoint(
@@ -24,7 +25,7 @@ class CadastrarChavePixEndpoint(
         request: CadastraChavePixGrpcRequest,
         responseObserver: StreamObserver<CadastraChavePixGrpcResponse>
     ) {
-        val novaChave = request.toModel()
+        val novaChave = validar(request = request.toModel())
 
         if(repository.existsByChave(novaChave.chave!!)){
             responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Essa chave já está cadastrada")
@@ -47,5 +48,10 @@ class CadastrarChavePixEndpoint(
             .setId(chave.id.toString()).build())
         responseObserver.onCompleted()
 
+    }
+
+    @Validated
+    fun validar(@Valid request: CadastraChavePixRequest): CadastraChavePixRequest {
+        return request
     }
 }
