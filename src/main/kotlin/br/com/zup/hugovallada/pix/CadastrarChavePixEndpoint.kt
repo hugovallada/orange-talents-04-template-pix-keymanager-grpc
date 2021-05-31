@@ -25,7 +25,6 @@ class CadastrarChavePixEndpoint(
         responseObserver: StreamObserver<CadastraChavePixGrpcResponse>
     ) {
         val novaChave = request.toModel()
-        println(novaChave)
 
         if(repository.existsByChave(novaChave.chave!!)){
             responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Essa chave já está cadastrada")
@@ -33,7 +32,7 @@ class CadastrarChavePixEndpoint(
             return
         }
 
-        val response = erpClient.buscarClientePorConta(novaChave.clienteId, novaChave.tipo!!.name)
+        val response = erpClient.buscarClientePorConta(novaChave.clienteId, novaChave.tipoConta!!.name)
 
         if(response == null) {
             responseObserver.onError(Status.NOT_FOUND.withDescription("O cliente não foi encontrado")
