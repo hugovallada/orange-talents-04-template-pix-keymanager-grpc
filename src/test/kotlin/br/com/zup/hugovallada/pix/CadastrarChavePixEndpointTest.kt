@@ -40,7 +40,7 @@ internal class CadastrarChavePixEndpointTest(
     internal fun `deve cadastrar no banco quando os dados forem validos e retornar o id interno`() {
         //cenario
         val request = CadastraChavePixGrpcRequest.newBuilder()
-            .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb15789")
+            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
             .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
             .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
 
@@ -72,7 +72,7 @@ internal class CadastrarChavePixEndpointTest(
 
         assertThrows<StatusRuntimeException>{
             grpcClient.cadastrarChave(CadastraChavePixGrpcRequest.newBuilder()
-                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb15789")
+                .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
                 .setTipoDeChave(TipoDeChave.EMAIL)
                 .setValorChave("email@email.com")
                 .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build())
@@ -85,7 +85,7 @@ internal class CadastrarChavePixEndpointTest(
     @Test
     internal fun `deve retornar um status NOT FOUND quando o id do cliente nao for encontrado no sistema externo`() {
         val request = CadastraChavePixGrpcRequest.newBuilder()
-            .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb15789")
+            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
             .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
             .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
 
