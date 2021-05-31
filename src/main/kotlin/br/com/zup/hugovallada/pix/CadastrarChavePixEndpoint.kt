@@ -12,6 +12,7 @@ import io.micronaut.validation.Validated
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.transaction.Transactional
+import javax.validation.ConstraintViolationException
 import javax.validation.Valid
 
 @Singleton
@@ -25,7 +26,16 @@ class CadastrarChavePixEndpoint(
         request: CadastraChavePixGrpcRequest,
         responseObserver: StreamObserver<CadastraChavePixGrpcResponse>
     ) {
-        val novaChave = validar(request = request.toModel())
+        var novaChave: CadastraChavePixRequest? = null
+
+        try{
+            novaChave = validar(request = request.toModel())
+        } catch (e: ConstraintViolationException){
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Um ou mais dados são inválidos")
+                .asRuntimeException())
+            return
+        }
+
 
         if(repository.existsByChave(novaChave.chave!!)){
             responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Essa chave já está cadastrada")
