@@ -4,7 +4,6 @@ import java.util.*
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
-import javax.print.DocFlavor
 import javax.validation.constraints.NotBlank
 
 @Entity

@@ -9,7 +9,7 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
 
-@Introspected
+
 data class CadastraChavePixRequest(
     @field:NotBlank
     val clienteId: String,

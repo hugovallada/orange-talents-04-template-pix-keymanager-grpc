@@ -5,6 +5,7 @@ import br.com.zup.hugovallada.TipoDeConta
 import br.com.zup.hugovallada.conta.Conta
 import java.util.*
 import javax.persistence.*
+import javax.validation.Valid
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 
@@ -18,7 +19,7 @@ class ChavePix(
     val chave: String,
     @Enumerated(EnumType.STRING) @field:NotNull
     val tipoConta: TipoDeConta,
-    @OneToMany(cascade = [CascadeType.MERGE])
+    @ManyToOne(cascade = [CascadeType.MERGE])
     val conta: Conta
 ) {
     @Id @GeneratedValue
