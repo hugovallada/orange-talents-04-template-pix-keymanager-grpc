@@ -3,18 +3,34 @@ syntax = "proto3";
 option java_multiple_files = true;
 option java_package = "br.com.zup.hugovallada";
 option java_outer_classname = "KeyManagerGrpc";
-option objc_class_prefix = "HLW";
 
 package br.com.zup.hugovallada;
 
-service KeyManagerGrpcService {
-  rpc send (KeyManagerGrpcRequest) returns (KeyManagerGrpcReply) {}
+service KeyManagerGrpcService{
+  rpc cadastrarChave(CadastraChavePixGrpcRequest) returns (CadastraChavePixGrpcResponse){}
 }
 
-message KeyManagerGrpcRequest {
-  string name = 1;
+message CadastraChavePixGrpcRequest {
+  string idCliente = 1;
+  TipoDeChave tipoDeChave = 2;
+  string valorChave = 3;
+  TipoDeConta tipoDeConta = 4;
 }
 
-message KeyManagerGrpcReply {
-  string message = 1;
+message CadastraChavePixGrpcResponse {
+  string id = 1;
+}
+
+enum TipoDeChave {
+  DESCONHECIDO = 0;
+  CPF = 1;
+  TELEFONE_CELULAR = 2;
+  EMAIL = 3;
+  CHAVE_ALEATORIA = 4;
+}
+
+enum TipoDeConta {
+  DESCONHECIDA = 0;
+  CONTA_CORRENTE = 1;
+  CONTA_POUPANCA = 2;
 }
