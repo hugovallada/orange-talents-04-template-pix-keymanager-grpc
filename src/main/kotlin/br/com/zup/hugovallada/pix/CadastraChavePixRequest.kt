@@ -14,18 +14,18 @@ data class CadastraChavePixRequest(
     @field:NotBlank
     val clienteId: String,
     @field:NotNull
-    val tipo: TipoDeChave,
+    val tipo: TipoDeChave?,
     @field:Size(max=77)
     val chave: String?,
     @field:NotNull
-    val tipoConta: TipoDeConta
+    val tipoConta: TipoDeConta?
 ){
     fun toModel(conta: Conta) : ChavePix{
         return ChavePix(
             clienteId = UUID.fromString(this.clienteId),
-            tipo = TipoDeChave.valueOf(this.tipo.name),
+            tipo = TipoDeChave.valueOf(this.tipo!!.name),
             chave = if(this.tipo == TipoDeChave.CHAVE_ALEATORIA) UUID.randomUUID().toString() else this.chave!!,
-            tipoConta = TipoDeConta.valueOf(this.tipo.name),
+            tipoConta = TipoDeConta.valueOf(this.tipoConta!!.name),
             conta = conta
         )
     }
