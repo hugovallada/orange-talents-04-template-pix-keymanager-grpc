@@ -112,7 +112,6 @@ internal class CadastrarChavePixEndpointTest(
             grpcClient.cadastrarChave(request)
         }. run {
             assertEquals(Status.INVALID_ARGUMENT.code, status.code)
-            assertEquals("Um ou mais dados são inválidos", status.description)
         }
     }
 

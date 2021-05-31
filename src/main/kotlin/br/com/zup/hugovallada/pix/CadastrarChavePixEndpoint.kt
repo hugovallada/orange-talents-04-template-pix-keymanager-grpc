@@ -5,6 +5,9 @@ import br.com.zup.hugovallada.CadastraChavePixGrpcResponse
 import br.com.zup.hugovallada.KeyManagerGrpcServiceGrpc
 import br.com.zup.hugovallada.conta.Conta
 import br.com.zup.hugovallada.externo.ItauERPClient
+import br.com.zup.hugovallada.utils.excecao.ClientNotFoundException
+import br.com.zup.hugovallada.utils.excecao.ErrorHandler
+import br.com.zup.hugovallada.utils.excecao.ExistingPixKeyException
 import br.com.zup.hugovallada.utils.extensao.toModel
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
@@ -15,6 +18,7 @@ import javax.transaction.Transactional
 import javax.validation.ConstraintViolationException
 import javax.validation.Valid
 
+@ErrorHandler
 @Singleton
 class CadastrarChavePixEndpoint(
     @Inject private val repository: ChavePixRepository,
@@ -26,29 +30,22 @@ class CadastrarChavePixEndpoint(
         request: CadastraChavePixGrpcRequest,
         responseObserver: StreamObserver<CadastraChavePixGrpcResponse>
     ) {
-        var novaChave: CadastraChavePixRequest? = null
-
-        try{
-            novaChave = validar(request = request.toModel())
-        } catch (e: ConstraintViolationException){
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Um ou mais dados são inválidos")
-                .asRuntimeException())
-            return
-        }
-
+        val novaChave = validar(request = request.toModel())
 
         if(repository.existsByChave(novaChave.chave!!)){
-            responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Essa chave já está cadastrada")
-                .asRuntimeException())
-            return
+//            responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Essa chave já está cadastrada")
+//                .asRuntimeException())
+//            return
+            throw ExistingPixKeyException("Essa chave já está cadastrada")
         }
 
         val response = erpClient.buscarClientePorConta(novaChave.clienteId, novaChave.tipoConta!!.name)
 
         if(response == null) {
-            responseObserver.onError(Status.NOT_FOUND.withDescription("O cliente não foi encontrado")
-                .asRuntimeException())
-            return
+//            responseObserver.onError(Status.NOT_FOUND.withDescription("O cliente não foi encontrado")
+//                .asRuntimeException())
+//            return
+            throw ClientNotFoundException("O cliente não foi encontrado")
         }
 
         val chave = novaChave.toModel(response.toModel())
