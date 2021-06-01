@@ -20,7 +20,11 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mock
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito
 import java.util.*
 import javax.inject.Singleton
@@ -31,10 +35,6 @@ internal class CadastrarChavePixEndpointTest(
     private val repository: ChavePixRepository,
     private val erpClient: ItauERPClient
 ) {
-
-
-
-
 
     @Test
     internal fun `deve cadastrar no banco quando os dados forem validos e retornar o id interno`() {
@@ -66,17 +66,25 @@ internal class CadastrarChavePixEndpointTest(
             tipo = TipoDeChave.EMAIL,
             chave = "email@email.com",
             tipoConta = TipoDeConta.CONTA_CORRENTE,
-            conta = Conta(instituicao = "ITAU", nomeDoTitular = "Hugo", cpfDoTitular = "029300292", agencia = "92882", numeroDaConta = "722")
+            conta = Conta(
+                instituicao = "ITAU",
+                nomeDoTitular = "Hugo",
+                cpfDoTitular = "029300292",
+                agencia = "92882",
+                numeroDaConta = "722"
+            )
         )
         repository.save(chave)
 
-        assertThrows<StatusRuntimeException>{
-            grpcClient.cadastrarChave(CadastraChavePixGrpcRequest.newBuilder()
-                .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
-                .setTipoDeChave(TipoDeChave.EMAIL)
-                .setValorChave("email@email.com")
-                .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build())
-        }. run {
+        assertThrows<StatusRuntimeException> {
+            grpcClient.cadastrarChave(
+                CadastraChavePixGrpcRequest.newBuilder()
+                    .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
+                    .setTipoDeChave(TipoDeChave.EMAIL)
+                    .setValorChave("email@email.com")
+                    .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+            )
+        }.run {
             assertEquals(Status.ALREADY_EXISTS.code, status.code)
             assertEquals("Essa chave já está cadastrada", status.description)
         }
@@ -110,15 +118,79 @@ internal class CadastrarChavePixEndpointTest(
 
         assertThrows<StatusRuntimeException> {
             grpcClient.cadastrarChave(request)
-        }. run {
+        }.run {
             assertEquals(Status.INVALID_ARGUMENT.code, status.code)
         }
     }
 
-    private fun gerarDadosContaResponse(): DadosContaResponse{
+    @ParameterizedTest
+    @CsvSource("CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
+        "CONTA_CORRENTE, CHAVE_ALEATORIA, ''","CONTA_POUPANCA, CPF, 44444444444")
+    internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(conta: String, chave:String, valor: String) {
+        repository.deleteAll()
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
+            .setValorChave(valor)
+            .setTipoDeChave(TipoDeChave.valueOf(chave))
+            .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
+
+        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
+            .thenReturn(gerarDadosContaResponse())
+
+        //acao
+        val response = grpcClient.cadastrarChave(request)
+
+
+        // validação
+        assertNotNull(response)
+        assertNotNull(response.id)
+        Thread.sleep(1000)
+        assertTrue(repository.existsById(UUID.fromString(response.id)))
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, TELEFONE_CELULAR , email@email.com", "52602c-a3c1-4727-ae32-3bdb2538841b,CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, CPF,email@email.com ","5260263c-a3c1-4727-ae32-3bdb2538841b,DESCONHECIDA, CPF, 44444444444",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_POUPANCA, CPF, ''","5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, DESCONHECIDO, email@email",
+    )
+    internal fun `deve retornar invalid argument quando os dados de entrada forem invalidos`(
+        id: String, conta: String, chave: String, valor: String
+    ) {
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente(id)
+            .setValorChave(valor)
+            .setTipoDeChave(TipoDeChave.valueOf(chave))
+            .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.cadastrarChave(request)
+        }.run {
+            assertEquals(Status.INVALID_ARGUMENT.code, status.code)
+        }
+    }
+
+    //    @ParameterizedTest
+////    @ValueSource(strings = arrayOf("CONTA_CORRENTE","CONTA_POUPANCA"))
+//    @EnumSource(TipoDeConta::class)
+//    internal fun `deve retornar ums status INVALID ARGUMENT caso algum dado seja invalido`(tipoDeConta: TipoDeConta) {
+//
+//        val request = CadastraChavePixGrpcRequest.newBuilder()
+//            .setIdCliente("c56dfef4-7901-44ob-84e2-a2cefb15789")
+//            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+//            .setTipoDeConta(tipoDeConta).build()
+//
+//        assertThrows<StatusRuntimeException> {
+//            grpcClient.cadastrarChave(request)
+//        }.run {
+//            assertEquals(Status.INVALID_ARGUMENT.code, status.code)
+//        }
+//    }
+
+    private fun gerarDadosContaResponse(): DadosContaResponse {
         return DadosContaResponse(
             tipo = TipoDeConta.CONTA_CORRENTE.name,
-            instituicao = InstituicaoResponse(nome = "Itau",ispb = "109232"),
+            instituicao = InstituicaoResponse(nome = "Itau", ispb = "109232"),
             agencia = "02932",
             numero = "8239",
             titular = TitularResponse(nome = "Hugo", "8273282")
@@ -131,13 +203,12 @@ internal class CadastrarChavePixEndpointTest(
     }
 
 
-
 }
 
 @Factory
-class GrpcClient{
+class GrpcClient {
     @Singleton
-    fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel): KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub{
+    fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel): KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub {
         return KeyManagerGrpcServiceGrpc.newBlockingStub(channel)
     }
 

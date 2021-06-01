@@ -46,7 +46,6 @@ class ValidPixKeyValidator : ConstraintValidator<ValidPixKey, CadastraChavePixRe
             TipoDeChave.CPF -> {
                 return value.chave!!.matches("[0-9]+".toRegex())
             }
-            TipoDeChave.DESCONHECIDO -> throw IllegalStateException("Não deveria ter acontecido isso")
             TipoDeChave.CHAVE_ALEATORIA -> return value.chave.isNullOrBlank()
         }
 
