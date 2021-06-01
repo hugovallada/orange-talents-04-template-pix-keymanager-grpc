@@ -205,7 +205,7 @@ internal class ChavePixEndpointTest(
                 .setIdPix(chave.id.toString()).build()
         )
 
-        assertEquals(true, response.sucesso)
+        assertEquals("Chave Pix deletada com sucesso", response.mensagem)
         assertFalse(repository.existsById(chave.id!!))
     }
 

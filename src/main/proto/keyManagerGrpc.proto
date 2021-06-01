@@ -20,7 +20,7 @@ message DeletarChavePixGrpcRequest{
 }
 
 message DeletarChavePixGrpcResponse{
-  bool sucesso = 1;
+  string mensagem = 1;
 }
 
 message CadastraChavePixGrpcRequest {
