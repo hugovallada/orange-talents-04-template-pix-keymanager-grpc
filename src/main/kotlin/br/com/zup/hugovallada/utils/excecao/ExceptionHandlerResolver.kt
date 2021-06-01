@@ -25,4 +25,6 @@ class ExceptionHandlerResolver(@Inject private val handlers: List<ExceptionHandl
         return foundHandlers.firstOrNull() ?: defaultHandler
     }
 
+
+
 }

@@ -58,6 +58,7 @@ dependencies {
     testImplementation("io.micronaut:micronaut-http-client")
     testImplementation("com.h2database:h2")
     testImplementation("org.mockito:mockito-core:3.8.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:3.8.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
 
 

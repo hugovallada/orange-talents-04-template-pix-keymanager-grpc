@@ -18,6 +18,7 @@ import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -34,13 +35,27 @@ internal class CadastrarChavePixEndpointTest(
     private val erpClient: ItauERPClient
 ) {
 
-    @Test
-    internal fun `deve cadastrar no banco quando os dados forem validos e retornar o id interno`() {
-        //cenario
+    @BeforeEach
+    internal fun setUp() {
+        repository.deleteAll()
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
+        "CONTA_CORRENTE, CHAVE_ALEATORIA, ''", "CONTA_POUPANCA, CPF, 44444444444"
+    )
+    internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(
+        conta: String,
+        chave: String,
+        valor: String
+    ) {
+        repository.deleteAll()
         val request = CadastraChavePixGrpcRequest.newBuilder()
             .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
-            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
-            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+            .setValorChave(valor)
+            .setTipoDeChave(TipoDeChave.valueOf(chave))
+            .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
 
         Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
             .thenReturn(gerarDadosContaResponse())
@@ -50,11 +65,36 @@ internal class CadastrarChavePixEndpointTest(
 
 
         // validação
-        assertNotNull(response)
-        assertNotNull(response.id)
-        Thread.sleep(1000)
-        assertTrue(repository.existsById(UUID.fromString(response.id)))
+        with(response){
+            assertNotNull(this)
+            assertNotNull(id)
+            Thread.sleep(1000)
+            assertTrue(repository.existsById(UUID.fromString(id)))
+        }
+
     }
+
+//    @Test
+//    internal fun `deve cadastrar no banco quando os dados forem validos e retornar o id interno`() {
+//        //cenario
+//        val request = CadastraChavePixGrpcRequest.newBuilder()
+//            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
+//            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+//            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+//
+//        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
+//            .thenReturn(gerarDadosContaResponse())
+//
+//        //acao
+//        val response = grpcClient.cadastrarChave(request)
+//
+//
+//        // validação
+//        assertNotNull(response)
+//        assertNotNull(response.id)
+//        Thread.sleep(1000)
+//        assertTrue(repository.existsById(UUID.fromString(response.id)))
+//    }
 
     @Test
     internal fun `deve retornar o status ALREADY EXISTS quando tentar cadastrar uma chave que ja existe`() {
@@ -107,67 +147,6 @@ internal class CadastrarChavePixEndpointTest(
 
     }
 
-    @Test
-    internal fun `deve retornar um status INVALID ARGUMENT caso algum dado seja invalido`() {
-        val request = CadastraChavePixGrpcRequest.newBuilder()
-            .setIdCliente("c56dfef4-7901-44ob-84e2-a2cefb15789")
-            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
-            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
-
-        assertThrows<StatusRuntimeException> {
-            grpcClient.cadastrarChave(request)
-        }.run {
-            assertEquals(Status.INVALID_ARGUMENT.code, status.code)
-        }
-    }
-
-    @Test
-    internal fun `deve retornar uma status UNKNOW quando um problema aconteca no client`() {
-        val request = CadastraChavePixGrpcRequest.newBuilder()
-            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
-            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
-            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
-        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
-            .thenThrow(RuntimeException())
-
-        assertThrows<StatusRuntimeException> {
-            grpcClient.cadastrarChave(request)
-        }.run {
-            assertEquals(Status.UNKNOWN.code, status.code)
-        }
-    }
-
-    @ParameterizedTest
-    @CsvSource(
-        "CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
-        "CONTA_CORRENTE, CHAVE_ALEATORIA, ''", "CONTA_POUPANCA, CPF, 44444444444"
-    )
-    internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(
-        conta: String,
-        chave: String,
-        valor: String
-    ) {
-        repository.deleteAll()
-        val request = CadastraChavePixGrpcRequest.newBuilder()
-            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
-            .setValorChave(valor)
-            .setTipoDeChave(TipoDeChave.valueOf(chave))
-            .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
-
-        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
-            .thenReturn(gerarDadosContaResponse())
-
-        //acao
-        val response = grpcClient.cadastrarChave(request)
-
-
-        // validação
-        assertNotNull(response)
-        assertNotNull(response.id)
-        Thread.sleep(1000)
-        assertTrue(repository.existsById(UUID.fromString(response.id)))
-    }
-
     @ParameterizedTest
     @CsvSource(
         "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, TELEFONE_CELULAR , email@email.com",
@@ -190,6 +169,22 @@ internal class CadastrarChavePixEndpointTest(
             grpcClient.cadastrarChave(request)
         }.run {
             assertEquals(Status.INVALID_ARGUMENT.code, status.code)
+        }
+    }
+
+    @Test
+    internal fun `deve retornar uma status UNKNOW quando um problema aconteca no client`() {
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
+            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
+            .thenThrow(RuntimeException())
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.cadastrarChave(request)
+        }.run {
+            assertEquals(Status.UNKNOWN.code, status.code)
         }
     }
 
