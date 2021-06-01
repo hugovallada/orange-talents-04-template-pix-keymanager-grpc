@@ -47,6 +47,7 @@ class CadastrarChavePixEndpoint(
 
     }
 
+
     @Validated
     fun validar(@Valid request: CadastraChavePixRequest): CadastraChavePixRequest {
         return request

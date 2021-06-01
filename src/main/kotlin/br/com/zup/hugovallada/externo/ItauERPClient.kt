@@ -14,4 +14,7 @@ interface ItauERPClient {
     @Get("/api/v1/clientes/{idCliente}/contas?tipo={tipo}")
     fun buscarClientePorConta(@PathVariable idCliente: String, @QueryValue tipo:String) : DadosContaResponse?
 
+    @Get("/api/v1/clientes/{idCliente}")
+    fun buscarClientePorId(@PathVariable idCliente: String) : DadosClienteResponseClient?
+
 }

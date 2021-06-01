@@ -11,12 +11,16 @@ import "google/protobuf/empty.proto";
 service KeyManagerGrpcService{
   rpc cadastrarChave(CadastraChavePixGrpcRequest) returns (CadastraChavePixGrpcResponse){}
 
-  rpc deletarChave(DeletarChavePixGrpcRequest) returns (google.protobuf.Empty){}
+  rpc deletarChave(DeletarChavePixGrpcRequest) returns (DeletarChavePixGrpcResponse){}
 }
 
 message DeletarChavePixGrpcRequest{
   string  idPix = 1;
   string idCliente = 2;
+}
+
+message DeletarChavePixGrpcResponse{
+  bool sucesso = 1;
 }
 
 message CadastraChavePixGrpcRequest {
