@@ -36,20 +36,21 @@ class ValidPixKeyValidator : ConstraintValidator<ValidPixKey, CadastraChavePixRe
         if(value?.tipo == null) return false
         if(value.chave.isNullOrBlank() && value.tipo != TipoDeChave.CHAVE_ALEATORIA) return false
 
-        when(value.tipo) {
-            TipoDeChave.EMAIL -> {
-                return value.chave!!.matches("[a-zA-Z0-9]+@[a-z]+\\.[a-zA-Z.]*".toRegex())
-            }
-            TipoDeChave.TELEFONE_CELULAR -> {
-                return value.chave!!.matches("^\\+[1-9][0-9]\\d{1,14}\$".toRegex())
-            }
-            TipoDeChave.CPF -> {
-                return value.chave!!.matches("[0-9]+".toRegex())
-            }
-            TipoDeChave.CHAVE_ALEATORIA -> return value.chave.isNullOrBlank()
+        if(value.tipo == TipoDeChave.EMAIL){
+            return value.chave!!.matches("[a-zA-Z0-9]+@[a-z]+\\.[a-zA-Z.]*".toRegex())
         }
 
-        return false
+        if(value.tipo == TipoDeChave.TELEFONE_CELULAR){
+            return value.chave!!.matches("^\\+[1-9][0-9]\\d{1,14}\$".toRegex())
+        }
+
+        if(value.tipo == TipoDeChave.CPF){
+            return value.chave!!.matches("[0-9]+".toRegex())
+        }
+
+
+        return value.chave.isNullOrBlank() && value.tipo == TipoDeChave.CHAVE_ALEATORIA
+
     }
 
 }

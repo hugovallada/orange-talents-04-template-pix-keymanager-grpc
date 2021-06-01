@@ -64,6 +64,8 @@ dependencies {
 }
 
 
+
+
 application {
     mainClass.set("br.com.zup.hugovallada.ApplicationKt")
 }
@@ -83,7 +85,9 @@ tasks {
         }
     }
 
-
+    test{
+        useJUnitPlatform()
+    }
 
 }
 sourceSets {

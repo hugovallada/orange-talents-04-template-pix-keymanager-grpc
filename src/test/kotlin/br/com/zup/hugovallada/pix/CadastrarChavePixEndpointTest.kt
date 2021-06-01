@@ -22,9 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.junit.jupiter.params.provider.EnumSource
-import org.junit.jupiter.params.provider.MethodSource
-import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.Mock
 import org.mockito.Mockito
 import java.util.*
 import javax.inject.Singleton
@@ -123,10 +121,32 @@ internal class CadastrarChavePixEndpointTest(
         }
     }
 
+    @Test
+    internal fun `deve retornar uma status UNKNOW quando um problema aconteca no client`() {
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
+            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
+            .thenThrow(RuntimeException())
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.cadastrarChave(request)
+        }.run {
+            assertEquals(Status.UNKNOWN.code, status.code)
+        }
+    }
+
     @ParameterizedTest
-    @CsvSource("CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
-        "CONTA_CORRENTE, CHAVE_ALEATORIA, ''","CONTA_POUPANCA, CPF, 44444444444")
-    internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(conta: String, chave:String, valor: String) {
+    @CsvSource(
+        "CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
+        "CONTA_CORRENTE, CHAVE_ALEATORIA, ''", "CONTA_POUPANCA, CPF, 44444444444"
+    )
+    internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(
+        conta: String,
+        chave: String,
+        valor: String
+    ) {
         repository.deleteAll()
         val request = CadastraChavePixGrpcRequest.newBuilder()
             .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
@@ -150,9 +170,12 @@ internal class CadastrarChavePixEndpointTest(
 
     @ParameterizedTest
     @CsvSource(
-        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, TELEFONE_CELULAR , email@email.com", "52602c-a3c1-4727-ae32-3bdb2538841b,CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
-        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, CPF,email@email.com ","5260263c-a3c1-4727-ae32-3bdb2538841b,DESCONHECIDA, CPF, 44444444444",
-        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_POUPANCA, CPF, ''","5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, DESCONHECIDO, email@email",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, TELEFONE_CELULAR , email@email.com",
+        "52602c-a3c1-4727-ae32-3bdb2538841b,CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, CPF,email@email.com ",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b,DESCONHECIDA, CPF, 44444444444",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_POUPANCA, CPF, ''",
+        "5260263c-a3c1-4727-ae32-3bdb2538841b, CONTA_CORRENTE, DESCONHECIDO, email@email",
     )
     internal fun `deve retornar invalid argument quando os dados de entrada forem invalidos`(
         id: String, conta: String, chave: String, valor: String
@@ -169,23 +192,6 @@ internal class CadastrarChavePixEndpointTest(
             assertEquals(Status.INVALID_ARGUMENT.code, status.code)
         }
     }
-
-    //    @ParameterizedTest
-////    @ValueSource(strings = arrayOf("CONTA_CORRENTE","CONTA_POUPANCA"))
-//    @EnumSource(TipoDeConta::class)
-//    internal fun `deve retornar ums status INVALID ARGUMENT caso algum dado seja invalido`(tipoDeConta: TipoDeConta) {
-//
-//        val request = CadastraChavePixGrpcRequest.newBuilder()
-//            .setIdCliente("c56dfef4-7901-44ob-84e2-a2cefb15789")
-//            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
-//            .setTipoDeConta(tipoDeConta).build()
-//
-//        assertThrows<StatusRuntimeException> {
-//            grpcClient.cadastrarChave(request)
-//        }.run {
-//            assertEquals(Status.INVALID_ARGUMENT.code, status.code)
-//        }
-//    }
 
     private fun gerarDadosContaResponse(): DadosContaResponse {
         return DadosContaResponse(
