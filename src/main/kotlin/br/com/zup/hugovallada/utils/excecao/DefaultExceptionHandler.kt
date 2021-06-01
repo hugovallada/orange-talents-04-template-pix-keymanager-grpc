@@ -14,6 +14,7 @@ class DefaultExceptionHandler : ExceptionHandler<Exception> {
             is ExistingPixKeyException -> Status.ALREADY_EXISTS.withDescription(e.message)
             is ClientNotFoundException -> Status.NOT_FOUND.withDescription(e.message)
             is PixKeyNotFoundException -> Status.NOT_FOUND.withDescription(e.message)
+            is PermissionDeniedException -> Status.PERMISSION_DENIED.withDescription(e.message)
             else -> Status.UNKNOWN
         }
         return StatusWithDetails(status.withCause(e))

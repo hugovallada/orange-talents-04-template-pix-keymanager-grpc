@@ -5,6 +5,7 @@ import br.com.zup.hugovallada.conta.Conta
 import br.com.zup.hugovallada.conta.DadosContaResponse
 import br.com.zup.hugovallada.conta.InstituicaoResponse
 import br.com.zup.hugovallada.conta.TitularResponse
+import br.com.zup.hugovallada.externo.DadosClienteResponseClient
 import br.com.zup.hugovallada.externo.ItauERPClient
 import io.grpc.ManagedChannel
 import io.grpc.Status
@@ -77,19 +78,7 @@ internal class ChavePixEndpointTest(
     @Test
     internal fun `deve retornar o status ALREADY EXISTS quando tentar cadastrar uma chave que ja existe`() {
         // cenário
-        val chave = ChavePix(
-            clienteId = UUID.randomUUID(),
-            tipo = TipoDeChave.EMAIL,
-            chave = "email@email.com",
-            tipoConta = TipoDeConta.CONTA_CORRENTE,
-            conta = Conta(
-                instituicao = "ITAU",
-                nomeDoTitular = "Hugo",
-                cpfDoTitular = "029300292",
-                agencia = "92882",
-                numeroDaConta = "722"
-            )
-        )
+        val chave = geraChavePix()
         repository.save(chave)
 
         assertThrows<StatusRuntimeException> {
@@ -184,19 +173,7 @@ internal class ChavePixEndpointTest(
 
     @Test
     internal fun `deve retornar um status UNKNOW quando um erro acontecer do lado do client`() {
-        val chave = ChavePix(
-            clienteId = UUID.randomUUID(),
-            tipo = TipoDeChave.EMAIL,
-            chave = "email@email.com",
-            tipoConta = TipoDeConta.CONTA_CORRENTE,
-            conta = Conta(
-                instituicao = "ITAU",
-                nomeDoTitular = "Hugo",
-                cpfDoTitular = "029300292",
-                agencia = "92882",
-                numeroDaConta = "722"
-            )
-        )
+        val chave = geraChavePix()
         repository.save(chave)
         //cenario
         Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
@@ -210,6 +187,80 @@ internal class ChavePixEndpointTest(
             assertEquals(Status.UNKNOWN.code, status.code)
         }
     }
+
+
+    @Test
+    internal fun `deve deletar uma chave e retornar um status true`(){
+        val chave = geraChavePix()
+        repository.save(chave)
+
+        Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
+            .thenReturn(DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "02467781054",
+            InstituicaoResponse("Itau","929292")
+            ))
+
+        val response = grpcClient.deletarChave(
+            DeletarChavePixGrpcRequest.newBuilder()
+                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890")
+                .setIdPix(chave.id.toString()).build()
+        )
+
+        assertEquals(true, response.sucesso)
+        assertFalse(repository.existsById(chave.id!!))
+    }
+
+    @Test
+    internal fun `deve retornar status NOT FOUND se o cliente nao for encontrado durante a delecao`() {
+        val chave = geraChavePix()
+        repository.save(chave)
+
+        Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
+            .thenReturn(null)
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.deletarChave(DeletarChavePixGrpcRequest.newBuilder()
+                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890").setIdPix(chave.id.toString()).build())
+
+        }.run {
+            assertEquals(Status.NOT_FOUND.code, status.code)
+            assertEquals("O cliente não foi encontrado", status.description)
+        }
+    }
+
+    @Test
+    internal fun `deve lancar um status PERMISSION DENIED quando tentar deletar uma chave pix que nao pertence ao cpf`() {
+        val chave = geraChavePix()
+        repository.save(chave)
+
+        Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
+            .thenReturn(DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "09999999",
+                InstituicaoResponse("Itau","929292")
+            ))
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.deletarChave(DeletarChavePixGrpcRequest.newBuilder()
+                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890").setIdPix(chave.id.toString()).build())
+        }. run {
+            assertEquals(Status.PERMISSION_DENIED.code, status.code)
+            assertEquals("Você não tem permissão para deletar essa chave PIX", status.description)
+        }
+    }
+
+    private fun geraChavePix() = ChavePix(
+        clienteId = UUID.randomUUID(),
+        tipo = TipoDeChave.EMAIL,
+        chave = "email@email.com",
+        tipoConta = TipoDeConta.CONTA_CORRENTE,
+        conta = Conta(
+            instituicao = "ITAU",
+            nomeDoTitular = "Hugo",
+            cpfDoTitular = "02467781054",
+            agencia = "92882",
+            numeroDaConta = "722"
+        )
+    )
+
+
 
     private fun gerarDadosContaResponse(): DadosContaResponse {
         return DadosContaResponse(

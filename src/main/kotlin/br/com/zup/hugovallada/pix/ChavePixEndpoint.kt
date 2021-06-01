@@ -2,10 +2,7 @@ package br.com.zup.hugovallada.pix
 
 import br.com.zup.hugovallada.*
 import br.com.zup.hugovallada.externo.ItauERPClient
-import br.com.zup.hugovallada.utils.excecao.ClientNotFoundException
-import br.com.zup.hugovallada.utils.excecao.ErrorHandler
-import br.com.zup.hugovallada.utils.excecao.ExistingPixKeyException
-import br.com.zup.hugovallada.utils.excecao.PixKeyNotFoundException
+import br.com.zup.hugovallada.utils.excecao.*
 import br.com.zup.hugovallada.utils.extensao.toModel
 import io.grpc.stub.StreamObserver
 import io.micronaut.validation.Validated
@@ -57,7 +54,14 @@ class ChavePixEndpoint(
             throw PixKeyNotFoundException("A chave Pix não foi encontrada")
         }
 
-        val response = erpClient.buscarClientePorId(chaveASerDeletada.idCliente)
+        val response = erpClient.buscarClientePorId(chaveASerDeletada.idCliente) ?:
+            throw ClientNotFoundException("O cliente não foi encontrado")
+
+        if(!repository.existsByIdAndContaCpfDoTitular(UUID.fromString(chaveASerDeletada.idPix), response.cpf)){
+            throw PermissionDeniedException("Você não tem permissão para deletar essa chave PIX")
+        }
+
+        repository.deleteById(UUID.fromString(chaveASerDeletada.idPix))
 
         responseObserver.onNext(DeletarChavePixGrpcResponse.newBuilder().setSucesso(true).build())
         responseObserver.onCompleted()
@@ -65,9 +69,8 @@ class ChavePixEndpoint(
 
 
     @Validated
-    fun validar(@Valid request: CadastraChavePixRequest): CadastraChavePixRequest {
-        return request
-    }
+    fun validar(@Valid request: CadastraChavePixRequest) = request
+
     @Validated
     private fun validar(@Valid request: DeletarChavePixRequest) = request
 }
