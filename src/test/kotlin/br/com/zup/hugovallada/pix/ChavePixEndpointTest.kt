@@ -1,9 +1,6 @@
 package br.com.zup.hugovallada.pix
 
-import br.com.zup.hugovallada.CadastraChavePixGrpcRequest
-import br.com.zup.hugovallada.KeyManagerGrpcServiceGrpc
-import br.com.zup.hugovallada.TipoDeChave
-import br.com.zup.hugovallada.TipoDeConta
+import br.com.zup.hugovallada.*
 import br.com.zup.hugovallada.conta.Conta
 import br.com.zup.hugovallada.conta.DadosContaResponse
 import br.com.zup.hugovallada.conta.InstituicaoResponse
@@ -29,7 +26,7 @@ import java.util.*
 import javax.inject.Singleton
 
 @MicronautTest(transactional = false)
-internal class CadastrarChavePixEndpointTest(
+internal class ChavePixEndpointTest(
     private val grpcClient: KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub,
     private val repository: ChavePixRepository,
     private val erpClient: ItauERPClient
@@ -39,6 +36,8 @@ internal class CadastrarChavePixEndpointTest(
     internal fun setUp() {
         repository.deleteAll()
     }
+
+    // Teste de cadastro
 
     @ParameterizedTest
     @CsvSource(
@@ -74,27 +73,6 @@ internal class CadastrarChavePixEndpointTest(
 
     }
 
-//    @Test
-//    internal fun `deve cadastrar no banco quando os dados forem validos e retornar o id interno`() {
-//        //cenario
-//        val request = CadastraChavePixGrpcRequest.newBuilder()
-//            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
-//            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
-//            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
-//
-//        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
-//            .thenReturn(gerarDadosContaResponse())
-//
-//        //acao
-//        val response = grpcClient.cadastrarChave(request)
-//
-//
-//        // validação
-//        assertNotNull(response)
-//        assertNotNull(response.id)
-//        Thread.sleep(1000)
-//        assertTrue(repository.existsById(UUID.fromString(response.id)))
-//    }
 
     @Test
     internal fun `deve retornar o status ALREADY EXISTS quando tentar cadastrar uma chave que ja existe`() {
@@ -183,6 +161,51 @@ internal class CadastrarChavePixEndpointTest(
 
         assertThrows<StatusRuntimeException> {
             grpcClient.cadastrarChave(request)
+        }.run {
+            assertEquals(Status.UNKNOWN.code, status.code)
+        }
+    }
+
+    // Teste de Remoção
+    @Test
+    internal fun `deve lancar um status NOT FOUND quando o idPix nao for encontrado`() {
+
+        assertThrows<StatusRuntimeException>{
+            grpcClient.deletarChave(
+                DeletarChavePixGrpcRequest.newBuilder()
+                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890").setIdPix("5260263c-a9c1-4727-ae32-3bdb2538841b").build())
+        }.run {
+            assertEquals(Status.NOT_FOUND.code, status.code)
+            assertEquals("A chave Pix não foi encontrada", status.description)
+        }
+
+    }
+
+
+    @Test
+    internal fun `deve retornar um status UNKNOW quando um erro acontecer do lado do client`() {
+        val chave = ChavePix(
+            clienteId = UUID.randomUUID(),
+            tipo = TipoDeChave.EMAIL,
+            chave = "email@email.com",
+            tipoConta = TipoDeConta.CONTA_CORRENTE,
+            conta = Conta(
+                instituicao = "ITAU",
+                nomeDoTitular = "Hugo",
+                cpfDoTitular = "029300292",
+                agencia = "92882",
+                numeroDaConta = "722"
+            )
+        )
+        repository.save(chave)
+        //cenario
+        Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
+            .thenThrow(java.lang.RuntimeException())
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.deletarChave(
+                DeletarChavePixGrpcRequest.newBuilder().setIdPix(chave.id.toString())
+                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890").build())
         }.run {
             assertEquals(Status.UNKNOWN.code, status.code)
         }
