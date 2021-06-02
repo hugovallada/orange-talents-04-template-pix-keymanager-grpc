@@ -5,14 +5,17 @@ import br.com.zup.hugovallada.conta.Conta
 import br.com.zup.hugovallada.conta.DadosContaResponse
 import br.com.zup.hugovallada.conta.InstituicaoResponse
 import br.com.zup.hugovallada.conta.TitularResponse
-import br.com.zup.hugovallada.externo.DadosClienteResponseClient
-import br.com.zup.hugovallada.externo.ItauERPClient
+import br.com.zup.hugovallada.externo.bcb.*
+import br.com.zup.hugovallada.externo.itau.DadosClienteResponseClient
+import br.com.zup.hugovallada.externo.itau.ItauERPClient
+import br.com.zup.hugovallada.utils.extensao.toModel
 import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
+import io.micronaut.http.HttpResponse
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import org.junit.jupiter.api.Assertions.*
@@ -21,17 +24,21 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.mockito.Mock
 import org.mockito.Mockito
+import java.time.LocalDateTime
 import java.util.*
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @MicronautTest(transactional = false)
 internal class ChavePixEndpointTest(
     private val grpcClient: KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub,
     private val repository: ChavePixRepository,
-    private val erpClient: ItauERPClient
+    private val erpClient: ItauERPClient,
 ) {
+
+    @Inject
+    lateinit var bcbClient:BCBClient
 
     @BeforeEach
     internal fun setUp() {
@@ -43,7 +50,7 @@ internal class ChavePixEndpointTest(
     @ParameterizedTest
     @CsvSource(
         "CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
-        "CONTA_CORRENTE, CHAVE_ALEATORIA, ''", "CONTA_POUPANCA, CPF, 44444444444"
+        "CONTA_CORRENTE, CHAVE_ALEATORIA,''", "CONTA_POUPANCA, CPF, 44444444444"
     )
     internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(
         conta: String,
@@ -51,14 +58,18 @@ internal class ChavePixEndpointTest(
         valor: String
     ) {
         repository.deleteAll()
+
         val request = CadastraChavePixGrpcRequest.newBuilder()
-            .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
+            .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890")
             .setValorChave(valor)
             .setTipoDeChave(TipoDeChave.valueOf(chave))
             .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
 
+        // TODO: Mock do bcbClient não está funcionando
         Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
             .thenReturn(gerarDadosContaResponse())
+
+
 
         //acao
         val response = grpcClient.cadastrarChave(request)
@@ -195,9 +206,11 @@ internal class ChavePixEndpointTest(
         repository.save(chave)
 
         Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
-            .thenReturn(DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "02467781054",
+            .thenReturn(
+                DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "02467781054",
             InstituicaoResponse("Itau","929292")
-            ))
+            )
+            )
 
         val response = grpcClient.deletarChave(
             DeletarChavePixGrpcRequest.newBuilder()
@@ -233,9 +246,11 @@ internal class ChavePixEndpointTest(
         repository.save(chave)
 
         Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
-            .thenReturn(DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "09999999",
+            .thenReturn(
+                DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "09999999",
                 InstituicaoResponse("Itau","929292")
-            ))
+            )
+            )
 
         assertThrows<StatusRuntimeException> {
             grpcClient.deletarChave(DeletarChavePixGrpcRequest.newBuilder()
@@ -272,9 +287,39 @@ internal class ChavePixEndpointTest(
         )
     }
 
+    private fun gerarCreatePixKeyRequest(request: CadastraChavePixGrpcRequest): CreatePixKeyRequest{
+        return CreatePixKeyRequest(
+            chavePix = request.toModel().toModel(gerarDadosContaResponse().toModel()),
+            dadosContaResponse = gerarDadosContaResponse()
+        )
+    }
+
+    private fun geraCreatePixKeyResponse(request: CadastraChavePixGrpcRequest): CreatePixKeyResponse{
+        val response = gerarDadosContaResponse()
+        return CreatePixKeyResponse(
+            keyType = request.tipoDeChave.name,
+            key = if(request.tipoDeChave == TipoDeChave.CHAVE_ALEATORIA) UUID.randomUUID().toString() else request.valorChave,
+            bankAccount = BankAccount(response.instituicao.nome,response.agencia,response.numero,
+                AccountType.converter(request.tipoDeConta)
+                ),
+            owner = Owner(
+                Type.LEGAL_PERSON,
+                response.titular.nome,
+                response.titular.cpf
+            ),
+            LocalDateTime.now()
+        )
+
+    }
+
     @MockBean(ItauERPClient::class)
     fun mockItauErpClient(): ItauERPClient? {
         return Mockito.mock(ItauERPClient::class.java)
+    }
+
+    @MockBean(BCBClient::class)
+    fun mockBCBClient(): BCBClient? {
+        return Mockito.mock(BCBClient::class.java)
     }
 
 

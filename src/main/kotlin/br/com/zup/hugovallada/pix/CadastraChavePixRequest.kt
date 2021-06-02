@@ -27,7 +27,7 @@ data class CadastraChavePixRequest(
         return ChavePix(
             clienteId = UUID.fromString(this.clienteId),
             tipo = TipoDeChave.valueOf(this.tipo!!.name),
-            chave = if(this.tipo == TipoDeChave.CHAVE_ALEATORIA) UUID.randomUUID().toString() else this.chave!!,
+            chave = if(this.tipo == TipoDeChave.CHAVE_ALEATORIA) null else this.chave!!,
             tipoConta = TipoDeConta.valueOf(this.tipoConta!!.name),
             conta = conta
         )

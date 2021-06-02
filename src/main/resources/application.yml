@@ -20,3 +20,4 @@ jpa:
 urls:
   apis:
     itau-erp: ${ITAU_ERP:`http://localhost:9091`}
+    bcb: ${BCB:`http://localhost:8082`}

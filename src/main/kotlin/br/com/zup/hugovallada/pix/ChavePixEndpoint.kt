@@ -1,7 +1,10 @@
 package br.com.zup.hugovallada.pix
 
 import br.com.zup.hugovallada.*
-import br.com.zup.hugovallada.externo.ItauERPClient
+import br.com.zup.hugovallada.externo.bcb.BCBClient
+import br.com.zup.hugovallada.externo.bcb.CreatePixKeyRequest
+import br.com.zup.hugovallada.externo.bcb.DeletePixKeyRequest
+import br.com.zup.hugovallada.externo.itau.ItauERPClient
 import br.com.zup.hugovallada.utils.excecao.*
 import br.com.zup.hugovallada.utils.extensao.toModel
 import io.grpc.stub.StreamObserver
@@ -16,7 +19,8 @@ import javax.validation.Valid
 @Singleton
 class ChavePixEndpoint(
     @Inject private val repository: ChavePixRepository,
-    @Inject private val erpClient: ItauERPClient
+    @Inject private val erpClient: ItauERPClient,
+    @Inject private val bcbClient: BCBClient
 ) : KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceImplBase() {
 
     @Transactional
@@ -34,14 +38,22 @@ class ChavePixEndpoint(
             ?: throw ClientNotFoundException("O cliente não foi encontrado")
 
         val chave = novaChave.toModel(response.toModel())
-        repository.save(chave)
+
+
+        val pixBCB = bcbClient.criarChave(CreatePixKeyRequest(chave, response))
+
+        if (chave.tipo == TipoDeChave.CHAVE_ALEATORIA) {
+
+            chave.chave = pixBCB.body()!!.key
+        }
+
+        val novaChavePix = repository.save(chave)
 
         responseObserver.onNext(
             CadastraChavePixGrpcResponse.newBuilder()
-                .setId(chave.id.toString()).build()
+                .setId(novaChavePix.id.toString()).build()
         )
         responseObserver.onCompleted()
-
     }
 
     override fun deletarChave(
@@ -50,20 +62,31 @@ class ChavePixEndpoint(
     ) {
         val chaveASerDeletada = validar(request = request.toModel())
 
-        if(!repository.existsById(UUID.fromString(chaveASerDeletada.idPix))){
+        if (!repository.existsById(UUID.fromString(chaveASerDeletada.idPix))) {
             throw PixKeyNotFoundException("A chave Pix não foi encontrada")
         }
 
-        val response = erpClient.buscarClientePorId(chaveASerDeletada.idCliente) ?:
-            throw ClientNotFoundException("O cliente não foi encontrado")
+        val response = erpClient.buscarClientePorId(chaveASerDeletada.idCliente)
+            ?: throw ClientNotFoundException("O cliente não foi encontrado")
 
-        if(!repository.existsByIdAndContaCpfDoTitular(UUID.fromString(chaveASerDeletada.idPix), response.cpf)){
+        if (!repository.existsByIdAndContaCpfDoTitular(UUID.fromString(chaveASerDeletada.idPix), response.cpf)) {
             throw PermissionDeniedException("Você não tem permissão para deletar essa chave PIX")
         }
 
+        val chave = repository.findById(UUID.fromString(chaveASerDeletada.idPix)).get()
+
+
+        val responseDel = bcbClient.deletarChave(
+            DeletePixKeyRequest(participant = response.instituicao.nome, key = chave.chave!!),
+            chave.chave!!
+        )
+
+
         repository.deleteById(UUID.fromString(chaveASerDeletada.idPix))
 
-        responseObserver.onNext(DeletarChavePixGrpcResponse.newBuilder().setMensagem("Chave Pix deletada com sucesso").build())
+        responseObserver.onNext(
+            DeletarChavePixGrpcResponse.newBuilder().setMensagem("Chave Pix deletada com sucesso").build()
+        )
         responseObserver.onCompleted()
     }
 

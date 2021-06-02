@@ -1,7 +1,6 @@
-package br.com.zup.hugovallada.externo
+package br.com.zup.hugovallada.externo.itau
 
 import br.com.zup.hugovallada.conta.DadosContaResponse
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.QueryValue

@@ -2,6 +2,7 @@ package br.com.zup.hugovallada.utils.excecao
 
 import br.com.zup.hugovallada.utils.excecao.ExceptionHandler.StatusWithDetails
 import io.grpc.Status
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import javax.validation.ConstraintViolationException
 
 class DefaultExceptionHandler : ExceptionHandler<Exception> {
@@ -15,6 +16,7 @@ class DefaultExceptionHandler : ExceptionHandler<Exception> {
             is ClientNotFoundException -> Status.NOT_FOUND.withDescription(e.message)
             is PixKeyNotFoundException -> Status.NOT_FOUND.withDescription(e.message)
             is PermissionDeniedException -> Status.PERMISSION_DENIED.withDescription(e.message)
+            is HttpClientResponseException -> Status.ABORTED
             else -> Status.UNKNOWN
         }
         return StatusWithDetails(status.withCause(e))

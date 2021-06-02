@@ -16,7 +16,7 @@ class ChavePix(
     @Enumerated(EnumType.STRING) @field:NotNull
     val tipo: TipoDeChave,
     @field:NotBlank
-    val chave: String,
+    var chave: String?,
     @Enumerated(EnumType.STRING) @field:NotNull
     val tipoConta: TipoDeConta,
     @ManyToOne(cascade = [CascadeType.ALL])

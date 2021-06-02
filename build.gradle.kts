@@ -49,6 +49,8 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
+    implementation("io.micronaut.xml:micronaut-jackson-xml")
+
 
 
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
