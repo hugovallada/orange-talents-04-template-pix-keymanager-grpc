@@ -8,7 +8,7 @@ import br.com.zup.hugovallada.conta.DadosContaResponse
 import br.com.zup.hugovallada.pix.ChavePix
 import java.lang.IllegalArgumentException
 
-class CreatePixKeyRequest(
+data class CreatePixKeyRequest(
     val keyType: KeyType,
     val key: String?=null,
     val bankAccount: BankAccount,

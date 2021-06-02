@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.mockito.Mock
 import org.mockito.Mockito
 import java.time.LocalDateTime
 import java.util.*
@@ -34,8 +35,10 @@ import javax.inject.Singleton
 internal class ChavePixEndpointTest(
     private val grpcClient: KeyManagerGrpcServiceGrpc.KeyManagerGrpcServiceBlockingStub,
     private val repository: ChavePixRepository,
-    private val erpClient: ItauERPClient,
 ) {
+
+    @Inject
+    lateinit var erpClient: ItauERPClient
 
     @Inject
     lateinit var bcbClient:BCBClient
@@ -43,14 +46,24 @@ internal class ChavePixEndpointTest(
     @BeforeEach
     internal fun setUp() {
         repository.deleteAll()
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890")
+            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+
+        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
+            .thenReturn(gerarDadosContaResponse())
+
+        Mockito.`when`(bcbClient.criarChave(gerarCreatePixKeyRequest(request)))
+            .thenReturn(HttpResponse.created(geraCreatePixKeyResponse(request)))
     }
 
     // Teste de cadastro
 
     @ParameterizedTest
     @CsvSource(
-        "CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_POUPANCA, TELEFONE_CELULAR, +5516999999999",
-        "CONTA_CORRENTE, CHAVE_ALEATORIA,''", "CONTA_POUPANCA, CPF, 44444444444"
+        "CONTA_CORRENTE, EMAIL, email@email.com", "CONTA_CORRENTE, TELEFONE_CELULAR, +5516999999999",
+        "CONTA_CORRENTE, CHAVE_ALEATORIA,''", "CONTA_CORRENTE, CPF, 44444444444"
     )
     internal fun `novo usuario deve ser cadastrado caso os dados sejam validos`(
         conta: String,
@@ -65,14 +78,10 @@ internal class ChavePixEndpointTest(
             .setTipoDeChave(TipoDeChave.valueOf(chave))
             .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
 
-        // TODO: Mock do bcbClient não está funcionando
-        Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
-            .thenReturn(gerarDadosContaResponse())
-
-
-
         //acao
         val response = grpcClient.cadastrarChave(request)
+
+        Thread.sleep(1000)
 
 
         // validação
