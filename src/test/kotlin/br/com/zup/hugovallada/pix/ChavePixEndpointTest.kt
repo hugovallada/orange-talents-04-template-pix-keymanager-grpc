@@ -16,6 +16,8 @@ import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.client.exceptions.HttpClientException
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import org.junit.jupiter.api.Assertions.*
@@ -56,6 +58,7 @@ internal class ChavePixEndpointTest(
 
         Mockito.`when`(bcbClient.criarChave(gerarCreatePixKeyRequest(request)))
             .thenReturn(HttpResponse.created(geraCreatePixKeyResponse(request)))
+
     }
 
     // Teste de cadastro
@@ -81,14 +84,11 @@ internal class ChavePixEndpointTest(
         //acao
         val response = grpcClient.cadastrarChave(request)
 
-        Thread.sleep(1000)
-
-
         // validação
         with(response){
             assertNotNull(this)
             assertNotNull(id)
-            Thread.sleep(1000)
+            Thread.sleep(50)
             assertTrue(repository.existsById(UUID.fromString(id)))
         }
 
@@ -160,7 +160,7 @@ internal class ChavePixEndpointTest(
     }
 
     @Test
-    internal fun `deve retornar uma status UNKNOW quando um problema aconteca no client`() {
+    internal fun `deve retornar uma status UNKNOW quando um problema acontecerno ERP client`() {
         val request = CadastraChavePixGrpcRequest.newBuilder()
             .setIdCliente("5260263c-a3c1-4727-ae32-3bdb2538841b")
             .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
@@ -168,10 +168,30 @@ internal class ChavePixEndpointTest(
         Mockito.`when`(erpClient.buscarClientePorConta(request.idCliente, request.tipoDeConta.name))
             .thenThrow(RuntimeException())
 
+
         assertThrows<StatusRuntimeException> {
             grpcClient.cadastrarChave(request)
         }.run {
             assertEquals(Status.UNKNOWN.code, status.code)
+        }
+
+    }
+
+    @Test
+    internal fun `deve retornar um status ABORTED quando o erro acontecer no BCB client`() {
+        val request = CadastraChavePixGrpcRequest.newBuilder()
+            .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890")
+            .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
+            .setTipoDeConta(TipoDeConta.CONTA_CORRENTE).build()
+
+        Mockito.`when`(bcbClient.criarChave(gerarCreatePixKeyRequest(request)))
+            .thenThrow(HttpClientResponseException::class.java)
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.cadastrarChave(request)
+        } . run {
+            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals("Um erro aconteceu no serviço externo", status.description)
         }
     }
 
@@ -213,6 +233,7 @@ internal class ChavePixEndpointTest(
     internal fun `deve deletar uma chave e retornar um status true`(){
         val chave = geraChavePix()
         repository.save(chave)
+        Thread.sleep(1000)
 
         Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
             .thenReturn(
@@ -221,13 +242,18 @@ internal class ChavePixEndpointTest(
             )
             )
 
+        Mockito.`when`(bcbClient.deletarChave(gerarDeletePixKeyRequest(chave), chave.chave!!))
+            .thenReturn(HttpResponse.ok(gerarDeletePixKeyResponse(chave)))
+
+
         val response = grpcClient.deletarChave(
             DeletarChavePixGrpcRequest.newBuilder()
                 .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890")
                 .setIdPix(chave.id.toString()).build()
         )
 
-        assertEquals("Chave Pix deletada com sucesso", response.mensagem)
+        Thread.sleep(1000)
+        assertEquals("Chave Pix ${chave.chave} deletada com sucesso", response.mensagem)
         assertFalse(repository.existsById(chave.id!!))
     }
 
@@ -270,8 +296,32 @@ internal class ChavePixEndpointTest(
         }
     }
 
+    @Test
+    internal fun `deve retornar status ABORTED se um erro ocorrer no BCB client`() {
+        val chave = geraChavePix()
+        repository.save(chave)
+
+        Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
+            .thenReturn(
+                DadosClienteResponseClient("c56dfef4-7901-44fb-84e2-a2cefb157890","Hugo", "02467781054",
+                    InstituicaoResponse("ITAU","929292")
+                )
+            )
+
+        Mockito.`when`(bcbClient.deletarChave(DeletePixKeyRequest("ITAU",chave.chave), chave.chave!!))
+            .thenThrow(HttpClientResponseException::class.java)
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.deletarChave(DeletarChavePixGrpcRequest.newBuilder()
+                .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890").setIdPix(chave.id.toString()).build())
+        }.run {
+            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals("Um erro aconteceu no serviço externo", status.description)
+        }
+    }
+
     private fun geraChavePix() = ChavePix(
-        clienteId = UUID.randomUUID(),
+        clienteId = UUID.fromString("c56dfef4-7901-44fb-84e2-a2cefb157890"),
         tipo = TipoDeChave.EMAIL,
         chave = "email@email.com",
         tipoConta = TipoDeConta.CONTA_CORRENTE,
@@ -302,6 +352,22 @@ internal class ChavePixEndpointTest(
             dadosContaResponse = gerarDadosContaResponse()
         )
     }
+
+    private fun gerarDeletePixKeyResponse(chavePix: ChavePix): DeletePixKeyResponse{
+        return DeletePixKeyResponse(
+            key = chavePix.chave!!,
+            participant = "ITAU UNIBANCO S.A",
+            deletedAt = LocalDateTime.now()
+        )
+    }
+
+    private fun gerarDeletePixKeyRequest(chavePix: ChavePix): DeletePixKeyRequest {
+        return DeletePixKeyRequest(
+            participant = "Itau",
+            key = chavePix.chave!!
+        )
+    }
+
 
     private fun geraCreatePixKeyResponse(request: CadastraChavePixGrpcRequest): CreatePixKeyResponse{
         val response = gerarDadosContaResponse()

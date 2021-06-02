@@ -16,8 +16,8 @@ class DefaultExceptionHandler : ExceptionHandler<Exception> {
             is ClientNotFoundException -> Status.NOT_FOUND.withDescription(e.message)
             is PixKeyNotFoundException -> Status.NOT_FOUND.withDescription(e.message)
             is PermissionDeniedException -> Status.PERMISSION_DENIED.withDescription(e.message)
-            is HttpClientResponseException -> Status.ABORTED
-            else -> Status.UNKNOWN
+            is HttpClientResponseException -> Status.ABORTED.withDescription("Um erro aconteceu no serviço externo")
+            else -> Status.UNKNOWN.withDescription("Um erro aconteceu")
         }
         return StatusWithDetails(status.withCause(e))
     }

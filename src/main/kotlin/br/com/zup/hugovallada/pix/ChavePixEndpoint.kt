@@ -81,11 +81,10 @@ class ChavePixEndpoint(
             chave.chave!!
         )
 
-
         repository.deleteById(UUID.fromString(chaveASerDeletada.idPix))
 
         responseObserver.onNext(
-            DeletarChavePixGrpcResponse.newBuilder().setMensagem("Chave Pix deletada com sucesso").build()
+            DeletarChavePixGrpcResponse.newBuilder().setMensagem("Chave Pix ${responseDel.body()!!.key} deletada com sucesso").build()
         )
         responseObserver.onCompleted()
     }
