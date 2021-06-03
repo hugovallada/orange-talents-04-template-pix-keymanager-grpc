@@ -80,7 +80,6 @@ class ConsultaPixEndpoint(
     ) {
 
         val requestChave = isValid(request = request.toModel())
-        println(requestChave.chavePix)
 
         val existsByChave = repository.findByChave(requestChave.chavePix)
 
@@ -96,6 +95,7 @@ class ConsultaPixEndpoint(
                 .setInstituicao(chave.conta.instituicao)
                 .setNumeroDaConta(chave.conta.numeroDaConta)
                 .setTipoDeConta(chave.tipoConta)
+                .setDataCriacao(protobufData(chave.criadaEm!!))
                 .build()
 
             responseObserver.onNext(retorno)

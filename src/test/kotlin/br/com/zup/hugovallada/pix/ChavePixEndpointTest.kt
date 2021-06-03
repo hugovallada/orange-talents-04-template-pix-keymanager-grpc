@@ -81,8 +81,12 @@ internal class ChavePixEndpointTest(
             .setTipoDeChave(TipoDeChave.valueOf(chave))
             .setTipoDeConta(TipoDeConta.valueOf(conta)).build()
 
+        Mockito.`when`(bcbClient.criarChave(gerarCreatePixKeyRequest(request)))
+            .thenReturn(HttpResponse.created(geraCreatePixKeyResponse(request)))
+
         //acao
         val response = grpcClient.cadastrarChave(request)
+
 
         // validação
         with(response){

@@ -131,6 +131,7 @@ internal class ConsultaPixEndpointTest(
     @Test
     internal fun `deve retornar a chave sem id interno e de cliente quando vier de um sistema externo com resposta vindo do proprio sistema`() {
         val chavePix = geraChavePix()
+        chavePix.criadaEm = LocalDateTime.now() // TODO: Data
         repository.save(chavePix)
 
         val request = DadosDeConsultaGrpcExternoRequest.newBuilder()

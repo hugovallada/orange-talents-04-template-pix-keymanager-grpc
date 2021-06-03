@@ -3,6 +3,7 @@ package br.com.zup.hugovallada.pix
 import br.com.zup.hugovallada.TipoDeChave
 import br.com.zup.hugovallada.TipoDeConta
 import br.com.zup.hugovallada.conta.Conta
+import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.*
 import javax.validation.Valid
@@ -24,4 +25,5 @@ class ChavePix(
 ) {
     @Id @GeneratedValue
     var id: UUID? = null
+    var criadaEm: LocalDateTime? = null // TODO: Data
 }

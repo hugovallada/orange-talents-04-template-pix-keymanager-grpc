@@ -47,6 +47,7 @@ class ChavePixEndpoint(
             chave.chave = pixBCB.body()!!.key
         }
 
+        chave.criadaEm = pixBCB.body()!!.createdAt // TODO: Data
         val novaChavePix = repository.save(chave)
 
         responseObserver.onNext(

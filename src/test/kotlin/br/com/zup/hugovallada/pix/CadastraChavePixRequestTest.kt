@@ -54,7 +54,7 @@ internal class CadastraChavePixRequestTest {
             chave = chave
         )
 
-        val chave = chavePixRequest.toModel(conta)
-        assertNotNull(chave.chave)
+        val chaveGerada = chavePixRequest.toModel(conta)
+        assertNotNull(chaveGerada.chave)
     }
 }
