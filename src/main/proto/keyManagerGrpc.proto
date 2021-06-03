@@ -6,12 +6,42 @@ option java_outer_classname = "KeyManagerGrpc";
 
 package br.com.zup.hugovallada;
 
-import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service KeyManagerGrpcService{
   rpc cadastrarChave(CadastraChavePixGrpcRequest) returns (CadastraChavePixGrpcResponse){}
 
   rpc deletarChave(DeletarChavePixGrpcRequest) returns (DeletarChavePixGrpcResponse){}
+}
+
+service SearchKeyService {
+  rpc consultarChave(DadosDeConsultaGrpcInternoRequest) returns (DadosChaveGrpcResponse){}
+
+  rpc consultarChaveExterno(DadosDeConsultaGrpcExternoRequest) returns (DadosChaveGrpcResponse){}
+}
+
+message DadosDeConsultaGrpcInternoRequest {
+  string idCliente = 1;
+  string idPix =2 ;
+}
+
+message DadosDeConsultaGrpcExternoRequest{
+  string chavePix = 1;
+}
+
+message DadosChaveGrpcResponse {
+  string idCliente = 1;
+  string idPix = 2;
+  TipoDeChave tipoDeChave = 3;
+  string chave= 4;
+  string titular=5;
+  string cpf = 6;
+  string instituicao = 7;
+  string agencia = 8;
+  string numeroDaConta = 9;
+  TipoDeConta tipoDeConta = 10;
+  google.protobuf.Timestamp dataCriacao= 11;
+
 }
 
 message DeletarChavePixGrpcRequest{
