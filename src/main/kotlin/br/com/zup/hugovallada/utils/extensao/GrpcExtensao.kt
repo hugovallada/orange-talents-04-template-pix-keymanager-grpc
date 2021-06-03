@@ -1,6 +1,11 @@
 package br.com.zup.hugovallada.utils.extensao
 
 import br.com.zup.hugovallada.*
+import br.com.zup.hugovallada.TipoDeConta.CONTA_CORRENTE
+import br.com.zup.hugovallada.TipoDeConta.CONTA_POUPANCA
+import br.com.zup.hugovallada.externo.bcb.AccountType
+import br.com.zup.hugovallada.externo.bcb.AccountType.CACC
+import br.com.zup.hugovallada.externo.bcb.AccountType.SVGS
 import br.com.zup.hugovallada.pix.CadastraChavePixRequest
 import br.com.zup.hugovallada.pix.DeletarChavePixRequest
 import br.com.zup.hugovallada.pix.consulta.ConsultaChavePixInternoRequest

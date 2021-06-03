@@ -1,6 +1,7 @@
 package br.com.zup.hugovallada.externo.bcb
 
 import br.com.zup.hugovallada.TipoDeChave
+import br.com.zup.hugovallada.TipoDeChave.*
 import br.com.zup.hugovallada.TipoDeConta
 import br.com.zup.hugovallada.TipoDeConta.CONTA_CORRENTE
 import br.com.zup.hugovallada.TipoDeConta.CONTA_POUPANCA
@@ -19,7 +20,7 @@ data class CreatePixKeyRequest(
 
     constructor(chavePix: ChavePix, dadosContaResponse: DadosContaResponse) : this(
         keyType = KeyType.converter(chavePix.tipo),
-        key = if(chavePix.tipo == TipoDeChave.CHAVE_ALEATORIA) null else chavePix.chave,
+        key = if(chavePix.tipo == CHAVE_ALEATORIA) null else chavePix.chave,
         bankAccount = BankAccount(
             participant = Conta.ITAU_UNIBANCO_ISPB,
             branch = dadosContaResponse.agencia,
@@ -64,6 +65,14 @@ enum class AccountType{
                 else -> throw IllegalArgumentException("Não existe esse tipo de conta")
             }
         }
+
+        fun toTipoConta(accountType: AccountType): TipoDeConta{
+            return when(accountType){
+                CACC -> TipoDeConta.CONTA_CORRENTE
+                SVGS -> CONTA_POUPANCA
+                else -> throw IllegalArgumentException("Isso não deveria acontecer")
+            }
+        }
     }
 
 
@@ -79,10 +88,20 @@ enum class KeyType(){
     companion object {
         fun converter(tipoDeChave: TipoDeChave): KeyType {
             return when (tipoDeChave) {
-                TipoDeChave.CHAVE_ALEATORIA -> RANDOM
+                CHAVE_ALEATORIA -> RANDOM
                 TipoDeChave.CPF -> CPF
                 TipoDeChave.TELEFONE_CELULAR -> PHONE
                 TipoDeChave.EMAIL -> EMAIL
+                else -> throw IllegalArgumentException("Chave inválida")
+            }
+        }
+
+        fun toTipoChave(keyType: KeyType): TipoDeChave{
+            return when (keyType) {
+                EMAIL -> TipoDeChave.EMAIL
+                PHONE -> TELEFONE_CELULAR
+                CPF -> TipoDeChave.CPF
+                RANDOM -> CHAVE_ALEATORIA
                 else -> throw IllegalArgumentException("Chave inválida")
             }
         }
