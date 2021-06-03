@@ -78,7 +78,7 @@ class ChavePixEndpoint(
 
 
         val responseDel = bcbClient.deletarChave(
-            DeletePixKeyRequest(participant = response.instituicao.nome, key = chave.chave!!),
+            DeletePixKeyRequest(key = chave.chave!!),
             chave.chave!!
         )
 

@@ -308,7 +308,7 @@ internal class ChavePixEndpointTest(
                 )
             )
 
-        Mockito.`when`(bcbClient.deletarChave(DeletePixKeyRequest("ITAU",chave.chave), chave.chave!!))
+        Mockito.`when`(bcbClient.deletarChave(DeletePixKeyRequest(key = chave.chave!!), chave.chave!!))
             .thenThrow(HttpClientResponseException::class.java)
 
         assertThrows<StatusRuntimeException> {
@@ -356,14 +356,14 @@ internal class ChavePixEndpointTest(
     private fun gerarDeletePixKeyResponse(chavePix: ChavePix): DeletePixKeyResponse{
         return DeletePixKeyResponse(
             key = chavePix.chave!!,
-            participant = "ITAU UNIBANCO S.A",
+            participant = Conta.ITAU_UNIBANCO_ISPB,
             deletedAt = LocalDateTime.now()
         )
     }
 
     private fun gerarDeletePixKeyRequest(chavePix: ChavePix): DeletePixKeyRequest {
         return DeletePixKeyRequest(
-            participant = "Itau",
+            participant = Conta.ITAU_UNIBANCO_ISPB,
             key = chavePix.chave!!
         )
     }
@@ -374,8 +374,8 @@ internal class ChavePixEndpointTest(
         return CreatePixKeyResponse(
             keyType = request.tipoDeChave.name,
             key = if(request.tipoDeChave == TipoDeChave.CHAVE_ALEATORIA) UUID.randomUUID().toString() else request.valorChave,
-            bankAccount = BankAccount(response.instituicao.nome,response.agencia,response.numero,
-                AccountType.converter(request.tipoDeConta)
+            bankAccount = BankAccount(participant = Conta.ITAU_UNIBANCO_ISPB,branch= response.agencia, accountNumber = response.numero,
+                accountType = AccountType.converter(request.tipoDeConta)
                 ),
             owner = Owner(
                 Type.LEGAL_PERSON,

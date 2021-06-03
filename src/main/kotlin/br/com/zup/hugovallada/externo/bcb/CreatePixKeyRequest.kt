@@ -4,6 +4,7 @@ import br.com.zup.hugovallada.TipoDeChave
 import br.com.zup.hugovallada.TipoDeConta
 import br.com.zup.hugovallada.TipoDeConta.CONTA_CORRENTE
 import br.com.zup.hugovallada.TipoDeConta.CONTA_POUPANCA
+import br.com.zup.hugovallada.conta.Conta
 import br.com.zup.hugovallada.conta.DadosContaResponse
 import br.com.zup.hugovallada.pix.ChavePix
 import java.lang.IllegalArgumentException
@@ -20,7 +21,7 @@ data class CreatePixKeyRequest(
         keyType = KeyType.converter(chavePix.tipo),
         key = if(chavePix.tipo == TipoDeChave.CHAVE_ALEATORIA) null else chavePix.chave,
         bankAccount = BankAccount(
-            participant = dadosContaResponse.instituicao.nome,
+            participant = Conta.ITAU_UNIBANCO_ISPB,
             branch = dadosContaResponse.agencia,
             accountNumber = dadosContaResponse.numero,
             accountType = AccountType.converter(tipoDeConta = chavePix.tipoConta)

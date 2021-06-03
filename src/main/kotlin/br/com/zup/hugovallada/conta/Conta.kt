@@ -22,4 +22,8 @@ class Conta(
     @Id @GeneratedValue
     var id: UUID? = null
 
+    companion object{
+        val ITAU_UNIBANCO_ISPB: String = "60701190"
+    }
+
 }
