@@ -88,9 +88,7 @@ tasks {
         }
     }
 
-    test{
-        useJUnitPlatform()
-    }
+
 
 }
 sourceSets {
