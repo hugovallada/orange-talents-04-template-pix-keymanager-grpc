@@ -82,7 +82,7 @@ internal class ConsultaPixEndpointTest(
     }
 
     @Test
-    internal fun `deve retornar os dados da chave`() {
+    internal fun `deve retornar os dados da chave com o id interno e do cliente quando a requisicao vier de um sistema interno`() {
         val chavePix = geraChavePix()
         repository.save(chavePix)
         val request = DadosDeConsultaGrpcInternoRequest.newBuilder()
@@ -98,6 +98,67 @@ internal class ConsultaPixEndpointTest(
         assertTrue(chavePix.clienteId.toString() == response.idCliente)
         assertTrue("email@email.com" == response.chave)
     }
+
+    @Test
+    internal fun `deve retornar o status invalid argument quando algum argumento nao for valido `(){
+        val request = DadosDeConsultaGrpcInternoRequest.newBuilder()
+            .setIdCliente("ola")
+            .setIdPix("1234").build()
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.consultarChave(request)
+        }. run {
+            assertEquals(Status.INVALID_ARGUMENT.code, status.code)
+        }
+    }
+
+    @Test
+    internal fun `deve retornar a chave sem id interno e de cliente quando vier de um sistema externo com resposta vindo do BCB`() {
+        val request = DadosDeConsultaGrpcExternoRequest.newBuilder()
+            .setChavePix(UUID.randomUUID().toString()).build()
+
+        Mockito.`when`(bcbClient.buscarChave(request.chavePix))
+            .thenReturn(HttpResponse.ok(geraPixDetailResponse()))
+
+        val response = grpcClient.consultarChaveExterno(request)
+
+        assertTrue(response.idCliente.isNullOrEmpty())
+        assertTrue(response.idPix.isNullOrEmpty())
+        assertEquals("email@email.com", response.chave)
+
+    }
+
+    @Test
+    internal fun `deve retornar a chave sem id interno e de cliente quando vier de um sistema externo com resposta vindo do proprio sistema`() {
+        val chavePix = geraChavePix()
+        repository.save(chavePix)
+
+        val request = DadosDeConsultaGrpcExternoRequest.newBuilder()
+            .setChavePix(chavePix.chave).build()
+
+        val response = grpcClient.consultarChaveExterno(request)
+
+        assertEquals(chavePix.chave, response.chave)
+        assertEquals(chavePix.conta.cpfDoTitular, response.cpf)
+    }
+
+    @Test
+    internal fun `deve retornar um status not found quando nao existir nem internamente e nem no BCB`() {
+        val request = DadosDeConsultaGrpcExternoRequest.newBuilder()
+            .setChavePix(UUID.randomUUID().toString()).build()
+
+        Mockito.`when`(bcbClient.buscarChave(UUID.randomUUID().toString()))
+            .thenReturn(HttpResponse.notFound())
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.consultarChaveExterno(request)
+        }.run {
+            assertEquals(Status.NOT_FOUND.code, status.code)
+            assertEquals("A chave pix não foi encontrada no banco central", status.description)
+        }
+    }
+
+
 
     private fun geraPixDetailResponse(): PixDetailResponse {
         return PixDetailResponse(

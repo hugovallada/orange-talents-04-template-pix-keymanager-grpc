@@ -80,6 +80,7 @@ class ConsultaPixEndpoint(
     ) {
 
         val requestChave = isValid(request = request.toModel())
+        println(requestChave.chavePix)
 
         val existsByChave = repository.findByChave(requestChave.chavePix)
 
@@ -100,7 +101,25 @@ class ConsultaPixEndpoint(
             responseObserver.onNext(retorno)
             responseObserver.onCompleted()
         } else {
-            null
+            val chavePixResponse = bcbClient.buscarChave(requestChave.chavePix)
+                ?: throw PixKeyNotFoundException("A chave pix não foi encontrada no banco central")
+
+            if(chavePixResponse.body() == null) throw PixKeyNotFoundException("A chave pix não foi encontrada no banco central")
+
+            val resposta = chavePixResponse.body()!!
+
+            responseObserver.onNext(DadosChaveGrpcResponse.newBuilder()
+                .setChave(resposta.key)
+                .setTipoDeChave(KeyType.toTipoChave(KeyType.valueOf(resposta.keyType)))
+                .setCpf(resposta.owner.taxIdNumber)
+                .setTitular(resposta.owner.name)
+                .setInstituicao(resposta.bankAccount.participant)
+                .setAgencia(resposta.bankAccount.branch)
+                .setNumeroDaConta(resposta.bankAccount.accountNumber)
+                .setTipoDeConta(AccountType.toTipoConta(resposta.bankAccount.accountType))
+                .setDataCriacao(protobufData(resposta.createdAt)).build())
+
+            responseObserver.onCompleted()
         }
 
     }
@@ -118,6 +137,7 @@ class ConsultaPixEndpoint(
     @Validated
     private fun isValid(@Valid request: ConsultaChavePixInternoRequest): ConsultaChavePixInternoRequest = request
 
+    @Validated
     private fun isValid(@Valid request: ConsultaChavePixRequest): ConsultaChavePixRequest = request
 
 }
