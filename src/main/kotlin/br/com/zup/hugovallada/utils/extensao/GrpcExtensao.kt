@@ -9,6 +9,7 @@ import br.com.zup.hugovallada.externo.bcb.AccountType.SVGS
 import br.com.zup.hugovallada.pix.CadastraChavePixRequest
 import br.com.zup.hugovallada.pix.DeletarChavePixRequest
 import br.com.zup.hugovallada.pix.consulta.ConsultaChavePixInternoRequest
+import br.com.zup.hugovallada.pix.consulta.ConsultaChavePixRequest
 
 fun CadastraChavePixGrpcRequest.toModel(): CadastraChavePixRequest {
     return CadastraChavePixRequest(
@@ -34,4 +35,8 @@ fun DeletarChavePixGrpcRequest.toModel(): DeletarChavePixRequest{
 
 fun DadosDeConsultaGrpcInternoRequest.toModel():ConsultaChavePixInternoRequest{
     return ConsultaChavePixInternoRequest(idPix = idPix, idCliente = idCliente)
+}
+
+fun DadosDeConsultaGrpcExternoRequest.toModel():ConsultaChavePixRequest{
+    return ConsultaChavePixRequest(chavePix= chavePix)
 }

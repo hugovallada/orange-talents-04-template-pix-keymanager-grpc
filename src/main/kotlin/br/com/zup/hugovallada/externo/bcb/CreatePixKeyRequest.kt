@@ -66,11 +66,11 @@ enum class AccountType{
             }
         }
 
-        fun toTipoConta(accountType: AccountType): TipoDeConta{
+        fun toTipoConta(accountType: AccountType?): TipoDeConta{
             return when(accountType){
-                CACC -> TipoDeConta.CONTA_CORRENTE
+                CACC -> CONTA_CORRENTE
                 SVGS -> CONTA_POUPANCA
-                else -> throw IllegalArgumentException("Isso não deveria acontecer")
+                else -> throw IllegalArgumentException("Não existe esse tipo de conta")
             }
         }
     }

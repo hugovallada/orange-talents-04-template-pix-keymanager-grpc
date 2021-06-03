@@ -52,9 +52,8 @@ class ConsultaPixEndpoint(
 
         val chave = repository.findById(UUID.fromString(consultaRequest.idPix)).get()
 
-        val responseClient = bcbClient.buscarChave(chave.chave!!)
-
-        //if(responseClient.body() == null) throw PixKeyNotFoundException("Chave Pix não encontrada")
+       val responseClient = bcbClient.buscarChave(chave.chave!!)
+           ?: throw PixKeyNotFoundException("A chave pix não foi encontra no banco central.")
 
         val resposta = responseClient.body()!!
         responseObserver.onNext(
@@ -75,6 +74,37 @@ class ConsultaPixEndpoint(
         responseObserver.onCompleted()
     }
 
+    override fun consultarChaveExterno(
+        request: DadosDeConsultaGrpcExternoRequest,
+        responseObserver: StreamObserver<DadosChaveGrpcResponse>
+    ) {
+
+        val requestChave = isValid(request = request.toModel())
+
+        val existsByChave = repository.findByChave(requestChave.chavePix)
+
+        if(existsByChave.isPresent){
+            val chave = existsByChave.get()
+
+            val retorno = DadosChaveGrpcResponse.newBuilder()
+                .setAgencia(chave.conta.agencia)
+                .setChave(chave.chave)
+                .setTipoDeChave(chave.tipo)
+                .setTitular(chave.conta.nomeDoTitular)
+                .setCpf(chave.conta.cpfDoTitular)
+                .setInstituicao(chave.conta.instituicao)
+                .setNumeroDaConta(chave.conta.numeroDaConta)
+                .setTipoDeConta(chave.tipoConta)
+                .build()
+
+            responseObserver.onNext(retorno)
+            responseObserver.onCompleted()
+        } else {
+            null
+        }
+
+    }
+
     private fun protobufData(data: LocalDateTime): Timestamp? {
         val instant = data.atZone(ZoneId.of("UTC")).toInstant()
         val protoData = Timestamp.newBuilder()
@@ -87,5 +117,7 @@ class ConsultaPixEndpoint(
 
     @Validated
     private fun isValid(@Valid request: ConsultaChavePixInternoRequest): ConsultaChavePixInternoRequest = request
+
+    private fun isValid(@Valid request: ConsultaChavePixRequest): ConsultaChavePixRequest = request
 
 }

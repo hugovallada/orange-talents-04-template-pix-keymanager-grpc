@@ -2,6 +2,7 @@ package br.com.zup.hugovallada.pix.consulta
 
 import br.com.zup.hugovallada.*
 import br.com.zup.hugovallada.conta.Conta
+import br.com.zup.hugovallada.externo.bcb.*
 import br.com.zup.hugovallada.pix.ChavePix
 import br.com.zup.hugovallada.pix.ChavePixRepository
 import io.grpc.ManagedChannel
@@ -10,10 +11,14 @@ import io.grpc.StatusRuntimeException
 import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
+import io.micronaut.http.HttpResponse
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.Mockito
+import java.time.LocalDateTime
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +29,8 @@ internal class ConsultaPixEndpointTest(
     @Inject private val grpcClient: SearchKeyServiceGrpc.SearchKeyServiceBlockingStub
 ){
 
+    @Inject
+    lateinit var bcbClient: BCBClient
 
     @Test
     internal fun `deve retornar status not found quando o id pix nao for encontrado`() {
@@ -55,6 +62,60 @@ internal class ConsultaPixEndpointTest(
         }
     }
 
+    @Test
+    internal fun `deve retornar um status NOT FOUND quando nao encontrar no BCB Client`(){
+        val chavePix = geraChavePix()
+        repository.save(chavePix)
+        val request = DadosDeConsultaGrpcInternoRequest.newBuilder()
+            .setIdCliente(chavePix.clienteId.toString())
+            .setIdPix(chavePix.id.toString()).build()
+
+        Mockito.`when`(bcbClient.buscarChave(UUID.randomUUID().toString()))
+            .thenReturn(HttpResponse.notFound())
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.consultarChave(request)
+        }.run {
+            assertEquals(Status.NOT_FOUND.code, status.code)
+            assertEquals("A chave pix não foi encontra no banco central.", status.description)
+        }
+    }
+
+    @Test
+    internal fun `deve retornar os dados da chave`() {
+        val chavePix = geraChavePix()
+        repository.save(chavePix)
+        val request = DadosDeConsultaGrpcInternoRequest.newBuilder()
+            .setIdCliente(chavePix.clienteId.toString())
+            .setIdPix(chavePix.id.toString()).build()
+
+        Mockito.`when`(bcbClient.buscarChave(chavePix.chave!!))
+            .thenReturn(HttpResponse.ok(geraPixDetailResponse()))
+
+        val response = grpcClient.consultarChave(request)
+
+        assertNotNull(response)
+        assertTrue(chavePix.clienteId.toString() == response.idCliente)
+        assertTrue("email@email.com" == response.chave)
+    }
+
+    private fun geraPixDetailResponse(): PixDetailResponse {
+        return PixDetailResponse(
+            keyType = KeyType.CPF.toString(),
+            key =  "email@email.com",
+            bankAccount = BankAccount(participant = Conta.ITAU_UNIBANCO_ISPB,branch= "992882", accountNumber = "0001",
+                accountType = AccountType.CACC
+            ),
+            owner = Owner(
+                Type.LEGAL_PERSON,
+                "Hugo",
+                "9998282"
+            ),
+            LocalDateTime.now()
+        )
+
+    }
+
     @Factory
     class GrpcClient(){
         @Singleton
@@ -62,6 +123,11 @@ internal class ConsultaPixEndpointTest(
             return SearchKeyServiceGrpc.newBlockingStub(channel)
         }
 
+    }
+
+    @MockBean(BCBClient::class)
+    fun mockBCBClient(): BCBClient?{
+        return Mockito.mock(BCBClient::class.java)
     }
 
     private fun geraChavePix() = ChavePix(
