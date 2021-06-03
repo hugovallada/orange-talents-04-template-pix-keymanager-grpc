@@ -178,7 +178,7 @@ internal class ChavePixEndpointTest(
     }
 
     @Test
-    internal fun `deve retornar um status ABORTED quando o erro acontecer no BCB client`() {
+    internal fun `deve retornar um status FAILED PRECONDITION quando o erro acontecer no BCB client`() {
         val request = CadastraChavePixGrpcRequest.newBuilder()
             .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890")
             .setTipoDeChave(TipoDeChave.CHAVE_ALEATORIA)
@@ -190,7 +190,7 @@ internal class ChavePixEndpointTest(
         assertThrows<StatusRuntimeException> {
             grpcClient.cadastrarChave(request)
         } . run {
-            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals(Status.FAILED_PRECONDITION.code, status.code)
             assertEquals("Um erro aconteceu no serviço externo", status.description)
         }
     }
@@ -297,7 +297,7 @@ internal class ChavePixEndpointTest(
     }
 
     @Test
-    internal fun `deve retornar status ABORTED se um erro ocorrer no BCB client`() {
+    internal fun `deve retornar status FAILED PRECONDITION se um erro ocorrer no BCB client`() {
         val chave = geraChavePix()
         repository.save(chave)
 
@@ -315,7 +315,7 @@ internal class ChavePixEndpointTest(
             grpcClient.deletarChave(DeletarChavePixGrpcRequest.newBuilder()
                 .setIdCliente("c56dfef4-7901-44fb-84e2-a2cefb157890").setIdPix(chave.id.toString()).build())
         }.run {
-            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals(Status.FAILED_PRECONDITION.code, status.code)
             assertEquals("Um erro aconteceu no serviço externo", status.description)
         }
     }

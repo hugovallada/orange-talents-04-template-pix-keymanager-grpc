@@ -56,6 +56,7 @@ class ChavePixEndpoint(
         responseObserver.onCompleted()
     }
 
+    @Transactional
     override fun deletarChave(
         request: DeletarChavePixGrpcRequest,
         responseObserver: StreamObserver<DeletarChavePixGrpcResponse>
