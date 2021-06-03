@@ -5,6 +5,7 @@ import br.com.zup.hugovallada.DadosDeConsultaGrpcInternoRequest
 import br.com.zup.hugovallada.SearchKeyServiceGrpc
 import br.com.zup.hugovallada.pix.ChavePixRepository
 import br.com.zup.hugovallada.utils.excecao.ErrorHandler
+import br.com.zup.hugovallada.utils.excecao.PermissionDeniedException
 import br.com.zup.hugovallada.utils.excecao.PixKeyNotFoundException
 import br.com.zup.hugovallada.utils.extensao.toModel
 import io.grpc.stub.StreamObserver
@@ -28,10 +29,22 @@ class ConsultaPixEndpoint(@Inject private val repository: ChavePixRepository) : 
 
         repository.existsById(UUID.fromString(consultaRequest.idPix))
             .let {
-                if(!it){
+                pixExiste ->
+                if(!pixExiste){
                     throw PixKeyNotFoundException("A chave pix de id ${consultaRequest.idPix} não foi encontrada")
                 }
             }
+
+        repository.existsByIdAndClienteId(UUID.fromString(consultaRequest.idPix), UUID.fromString(consultaRequest.idCliente))
+            .let {
+                pixExiste ->
+                if(!pixExiste) {
+                    throw PermissionDeniedException("A chave que você está tentando consultar, não existe ou não lhe pertence")
+                }
+            }
+
+
+
 
 
     }

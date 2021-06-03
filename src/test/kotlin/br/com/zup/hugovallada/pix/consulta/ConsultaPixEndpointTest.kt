@@ -1,8 +1,8 @@
 package br.com.zup.hugovallada.pix.consulta
 
-import br.com.zup.hugovallada.DadosDeConsultaGrpcInternoRequest
-import br.com.zup.hugovallada.DadosDeConsultaGrpcInternoRequestOrBuilder
-import br.com.zup.hugovallada.SearchKeyServiceGrpc
+import br.com.zup.hugovallada.*
+import br.com.zup.hugovallada.conta.Conta
+import br.com.zup.hugovallada.pix.ChavePix
 import br.com.zup.hugovallada.pix.ChavePixRepository
 import io.grpc.ManagedChannel
 import io.grpc.Status
@@ -20,6 +20,7 @@ import javax.inject.Singleton
 
 @MicronautTest(transactional = false)
 internal class ConsultaPixEndpointTest(
+    @Inject private val repository: ChavePixRepository,
     @Inject private val grpcClient: SearchKeyServiceGrpc.SearchKeyServiceBlockingStub
 ){
 
@@ -38,6 +39,22 @@ internal class ConsultaPixEndpointTest(
         }
     }
 
+    @Test
+    internal fun `deve retornar permission denied quando a chave id nao pertencer ao cliente`() {
+        val chavePix = geraChavePix()
+        repository.save(chavePix)
+        val request = DadosDeConsultaGrpcInternoRequest.newBuilder()
+            .setIdCliente(UUID.randomUUID().toString())
+            .setIdPix(chavePix.id.toString()).build()
+
+        assertThrows<StatusRuntimeException> {
+            grpcClient.consultarChave(request)
+        }.run {
+            assertEquals(Status.PERMISSION_DENIED.code, status.code)
+            assertEquals("A chave que você está tentando consultar, não existe ou não lhe pertence", status.description)
+        }
+    }
+
     @Factory
     class GrpcClient(){
         @Singleton
@@ -46,4 +63,18 @@ internal class ConsultaPixEndpointTest(
         }
 
     }
+
+    private fun geraChavePix() = ChavePix(
+        clienteId = UUID.fromString("c56dfef4-7901-44fb-84e2-a2cefb157890"),
+        tipo = TipoDeChave.EMAIL,
+        chave = "email@email.com",
+        tipoConta = TipoDeConta.CONTA_CORRENTE,
+        conta = Conta(
+            instituicao = "ITAU",
+            nomeDoTitular = "Hugo",
+            cpfDoTitular = "02467781054",
+            agencia = "92882",
+            numeroDaConta = "722"
+        )
+    )
 }
