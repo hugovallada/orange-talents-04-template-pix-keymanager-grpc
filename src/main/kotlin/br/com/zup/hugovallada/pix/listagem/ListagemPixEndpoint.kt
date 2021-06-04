@@ -5,35 +5,31 @@ import br.com.zup.hugovallada.ListPixKeyServiceGrpc
 import br.com.zup.hugovallada.ListaPixGrpcResponse
 import br.com.zup.hugovallada.pix.ChavePixRepository
 import br.com.zup.hugovallada.utils.excecao.ErrorHandler
-import br.com.zup.hugovallada.utils.validacao.ValidUUID
 import com.google.protobuf.Timestamp
 import io.grpc.stub.StreamObserver
-import io.micronaut.validation.Validated
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
-import javax.validation.ConstraintViolationException
-import javax.validation.Valid
 
 @ErrorHandler
 @Singleton
-class ListagemPixEndpoint(@Inject private val repository: ChavePixRepository) : ListPixKeyServiceGrpc.ListPixKeyServiceImplBase() {
+class ListagemPixEndpoint(@Inject private val repository: ChavePixRepository) :
+    ListPixKeyServiceGrpc.ListPixKeyServiceImplBase() {
 
     override fun listarChaves(
         request: IdDoClienteGrpcRequest,
         responseObserver: StreamObserver<ListaPixGrpcResponse>
     ) {
-        if(!validar(request.id)) throw IllegalArgumentException("O id é nulo ou não é uma UUID")
+        if (!validar(request.id)) throw IllegalArgumentException("O id é nulo ou não é uma UUID")
 
         repository.findAllByClienteId(UUID.fromString(request.id)).let { chaves ->
             if (chaves.isEmpty()) {
                 responseObserver.onNext(ListaPixGrpcResponse.newBuilder().build())
                 responseObserver.onCompleted()
             } else {
-                println(chaves.size)
-                 val chavinhas = chaves.map { chavePix ->
+                val listaChaveResponse = chaves.map { chavePix ->
                     ListaPixGrpcResponse.ChavePixResponse.newBuilder()
                         .setClienteId(chavePix.clienteId.toString())
                         .setPixId(chavePix.id.toString())
@@ -44,22 +40,15 @@ class ListagemPixEndpoint(@Inject private val repository: ChavePixRepository) : 
                         .build()
                 }.toList()
 
-                var contador = 0
-                for(chave in chavinhas){
-                    contador++
-                    println(chave.pixId)
-                    responseObserver.onNext(ListaPixGrpcResponse.newBuilder().setChavePix(contador, chave).build())
-                }
-
+                responseObserver.onNext(ListaPixGrpcResponse.newBuilder().addAllChavePix(listaChaveResponse).build())
                 responseObserver.onCompleted()
-
             }
+
         }
-
-
     }
 
-    private fun dateToTimestampProto(data : LocalDateTime): Timestamp {
+
+    private fun dateToTimestampProto(data: LocalDateTime): Timestamp {
         val timestamp = data.atZone(ZoneId.of("UTC"))
 
         return Timestamp.newBuilder()
@@ -68,7 +57,7 @@ class ListagemPixEndpoint(@Inject private val repository: ChavePixRepository) : 
             .build()
     }
 
-    private fun validar(idCliente: String): Boolean{
+    private fun validar(idCliente: String): Boolean {
         return !idCliente.isNullOrEmpty() && idCliente.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$".toRegex())
     }
 }
