@@ -24,27 +24,23 @@ class ListagemPixEndpoint(@Inject private val repository: ChavePixRepository) :
     ) {
         if (!validar(request.id)) throw IllegalArgumentException("O id é nulo ou não é uma UUID")
 
-        repository.findAllByClienteId(UUID.fromString(request.id)).let { chaves ->
-            if (chaves.isEmpty()) {
-                responseObserver.onNext(ListaPixGrpcResponse.newBuilder().build())
-                responseObserver.onCompleted()
-            } else {
-                val listaChaveResponse = chaves.map { chavePix ->
-                    ListaPixGrpcResponse.ChavePixResponse.newBuilder()
-                        .setClienteId(chavePix.clienteId.toString())
-                        .setPixId(chavePix.id.toString())
-                        .setTipo(chavePix.tipo)
-                        .setTipoConta(chavePix.tipoConta)
-                        .setValor(chavePix.chave)
-                        .setCriadaEm(dateToTimestampProto(chavePix.criadaEm!!))
-                        .build()
-                }.toList()
-
-                responseObserver.onNext(ListaPixGrpcResponse.newBuilder().addAllChavePix(listaChaveResponse).build())
-                responseObserver.onCompleted()
-            }
-
+        val chaves = repository.findAllByClienteId(UUID.fromString(request.id)).map {
+                chavePix ->
+            ListaPixGrpcResponse.ChavePixResponse.newBuilder()
+                .setPixId(chavePix.id.toString())
+                .setClienteId(chavePix.clienteId.toString())
+                .setTipo(chavePix.tipo)
+                .setTipoConta(chavePix.tipoConta)
+                .setValor(chavePix.chave)
+                .setCriadaEm(dateToTimestampProto(chavePix.criadaEm!!))
+                .build()
         }
+
+        responseObserver.onNext(
+            ListaPixGrpcResponse.newBuilder()
+                .addAllChaves(chaves)
+                .build())
+        responseObserver.onCompleted()
     }
 
 
@@ -58,6 +54,6 @@ class ListagemPixEndpoint(@Inject private val repository: ChavePixRepository) :
     }
 
     private fun validar(idCliente: String): Boolean {
-        return !idCliente.isNullOrEmpty() && idCliente.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$".toRegex())
+        return idCliente.isNotEmpty() && idCliente.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$".toRegex())
     }
 }

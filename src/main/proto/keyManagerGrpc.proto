@@ -36,7 +36,8 @@ message ListaPixGrpcResponse{
     google.protobuf.Timestamp criadaEm = 6;
   }
 
-  repeated ChavePixResponse chavePix = 1;
+  repeated ChavePixResponse chaves= 1;
+
 }
 
 message DadosDeConsultaGrpcRequest {
