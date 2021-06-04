@@ -1,4 +1,4 @@
-package br.com.zup.hugovallada.pix.consulta.consultando
+package br.com.zup.hugovallada.pix.consulta
 
 import br.com.zup.hugovallada.TipoDeChave
 import br.com.zup.hugovallada.TipoDeConta
@@ -18,7 +18,7 @@ data class DadosDaPix(
     ) {
 
     companion object{
-        fun of(chave: ChavePix): DadosDaPix{
+        fun of(chave: ChavePix): DadosDaPix {
             return DadosDaPix(
                 pixId = chave.id,
                 clientId = chave.clienteId,

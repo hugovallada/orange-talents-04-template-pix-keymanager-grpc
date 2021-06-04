@@ -1,4 +1,4 @@
-package br.com.zup.hugovallada.pix.consulta.consultando
+package br.com.zup.hugovallada.pix.consulta
 
 import br.com.zup.hugovallada.DadosChavePixGrpcResponse
 import br.com.zup.hugovallada.DadosDeConsultaGrpcRequest

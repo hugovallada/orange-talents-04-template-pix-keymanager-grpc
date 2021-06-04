@@ -1,8 +1,8 @@
 package br.com.zup.hugovallada.externo.bcb
 
 import br.com.zup.hugovallada.conta.Conta
-import br.com.zup.hugovallada.pix.consulta.consultando.DadosDaPix
-import br.com.zup.hugovallada.pix.consulta.consultando.Instituicoes
+import br.com.zup.hugovallada.pix.consulta.DadosDaPix
+import br.com.zup.hugovallada.pix.consulta.Instituicoes
 import java.time.LocalDateTime
 
 data class PixDetailResponse(
@@ -12,7 +12,7 @@ data class PixDetailResponse(
     val owner: Owner,
     val createdAt: LocalDateTime
 ){
-    fun toModel() : DadosDaPix{
+    fun toModel() : DadosDaPix {
         return DadosDaPix(
             tipo = KeyType.toTipoChave(keyType = KeyType.valueOf(keyType)),
             chave = key,

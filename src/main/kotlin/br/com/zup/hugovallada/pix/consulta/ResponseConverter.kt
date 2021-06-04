@@ -1,6 +1,5 @@
-package br.com.zup.hugovallada.pix.consulta.consultando
+package br.com.zup.hugovallada.pix.consulta
 
-import br.com.zup.hugovallada.DadosChaveGrpcResponse
 import br.com.zup.hugovallada.DadosChavePixGrpcResponse
 import com.google.protobuf.Timestamp
 import java.time.ZoneId

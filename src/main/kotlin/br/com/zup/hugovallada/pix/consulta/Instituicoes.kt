@@ -1,4 +1,4 @@
-package br.com.zup.hugovallada.pix.consulta.consultando
+package br.com.zup.hugovallada.pix.consulta
 
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser

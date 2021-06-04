@@ -1,4 +1,4 @@
-package br.com.zup.hugovallada.pix.consulta.consultando
+package br.com.zup.hugovallada.pix.consulta
 
 import br.com.zup.hugovallada.externo.bcb.BCBClient
 import br.com.zup.hugovallada.pix.ChavePixRepository
@@ -6,13 +6,14 @@ import br.com.zup.hugovallada.utils.excecao.PixKeyNotFoundException
 import br.com.zup.hugovallada.utils.validacao.ValidUUID
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.http.HttpStatus
+import java.lang.IllegalStateException
 import java.util.*
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
 
 @Introspected
 sealed class Filtro {
-    abstract  fun filtra(repository: ChavePixRepository, bcbClient: BCBClient):DadosDaPix
+    abstract  fun filtra(repository: ChavePixRepository, bcbClient: BCBClient): DadosDaPix
 
     @Introspected
     data class PorPixId(
@@ -27,7 +28,7 @@ sealed class Filtro {
                 .filter{
                     it.pertenceAo(clienteIdAsUuid())
                 }.map(DadosDaPix::of)
-                .orElseThrow { PixKeyNotFoundException("") }
+                .orElseThrow { PixKeyNotFoundException("Pix Id ou client Id incorretos") }
         }
 
     }
@@ -35,9 +36,9 @@ sealed class Filtro {
     @Introspected
     data class PorChave(@field:NotBlank @Size(max=77) val chave: String): Filtro(){
         override fun filtra(repository: ChavePixRepository, bcbClient: BCBClient): DadosDaPix {
-            val chave2 = repository.findByChave(chave)
-            if(chave2.isPresent){
-                val chaveEncontrada = chave2.get()
+            val optChave = repository.findByChave(chave)
+            if(optChave.isPresent){
+                val chaveEncontrada = optChave.get()
                 val chaveResposta = DadosDaPix.of(chaveEncontrada)
                 chaveResposta.clientId = null
                 chaveResposta.pixId = null
@@ -47,7 +48,7 @@ sealed class Filtro {
             val response = bcbClient.buscarChave(chave)
             return when(response.status){
                 HttpStatus.OK -> response.body()?.toModel()!!
-                else -> throw PixKeyNotFoundException("")
+                else -> throw PixKeyNotFoundException("A chave pix nao foi encontrada")
             }
         }
     }
@@ -55,7 +56,7 @@ sealed class Filtro {
     @Introspected
     object Invalido : Filtro() {
         override fun filtra(repository: ChavePixRepository, bcbClient: BCBClient): DadosDaPix {
-            TODO("Not yet implemented")
+            throw IllegalStateException("Essa operação é inválida")
         }
     }
 }

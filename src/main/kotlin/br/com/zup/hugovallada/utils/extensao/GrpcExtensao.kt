@@ -2,16 +2,9 @@ package br.com.zup.hugovallada.utils.extensao
 
 import br.com.zup.hugovallada.*
 import br.com.zup.hugovallada.DadosDeConsultaGrpcRequest.FiltroCase.*
-import br.com.zup.hugovallada.TipoDeConta.CONTA_CORRENTE
-import br.com.zup.hugovallada.TipoDeConta.CONTA_POUPANCA
-import br.com.zup.hugovallada.externo.bcb.AccountType
-import br.com.zup.hugovallada.externo.bcb.AccountType.CACC
-import br.com.zup.hugovallada.externo.bcb.AccountType.SVGS
 import br.com.zup.hugovallada.pix.CadastraChavePixRequest
 import br.com.zup.hugovallada.pix.DeletarChavePixRequest
-import br.com.zup.hugovallada.pix.consulta.ConsultaChavePixInternoRequest
-import br.com.zup.hugovallada.pix.consulta.ConsultaChavePixRequest
-import br.com.zup.hugovallada.pix.consulta.consultando.Filtro
+import br.com.zup.hugovallada.pix.consulta.Filtro
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
 
@@ -35,14 +28,6 @@ fun DeletarChavePixGrpcRequest.toModel(): DeletarChavePixRequest{
         idCliente = idCliente,
         idPix = idPix
     )
-}
-
-fun DadosDeConsultaGrpcInternoRequest.toModel():ConsultaChavePixInternoRequest{
-    return ConsultaChavePixInternoRequest(idPix = idPix, idCliente = idCliente)
-}
-
-fun DadosDeConsultaGrpcExternoRequest.toModel():ConsultaChavePixRequest{
-    return ConsultaChavePixRequest(chavePix= chavePix)
 }
 
 fun DadosDeConsultaGrpcRequest.toModel(validator: Validator): Filtro {

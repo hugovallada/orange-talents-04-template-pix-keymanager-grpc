@@ -1,6 +1,5 @@
-package br.com.zup.hugovallada.pix.consulta.consultando
+package br.com.zup.hugovallada.pix.consulta
 
-import br.com.zup.hugovallada.DadosChavePixGrpcResponse
 import br.com.zup.hugovallada.conta.Conta
 import br.com.zup.hugovallada.externo.bcb.AccountType
 import br.com.zup.hugovallada.externo.bcb.BankAccount
@@ -16,7 +15,7 @@ data class DadosPixKeyResponse (
     val createdAt: LocalDateTime
         ) {
 
-    fun toModel(): DadosDaPix{
+    fun toModel(): DadosDaPix {
         return DadosDaPix(
             tipo = KeyType.toTipoChave(keyType),
             chave = key,
