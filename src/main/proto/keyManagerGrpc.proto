@@ -19,6 +19,43 @@ service SearchKeyService {
 
   rpc consultarChaveExterno(DadosDeConsultaGrpcExternoRequest) returns (DadosChaveGrpcResponse){}
 }
+service SearchPixKeyService {
+  rpc consultarChave(DadosDeConsultaGrpcRequest) returns (DadosChavePixGrpcResponse){}
+}
+
+message DadosDeConsultaGrpcRequest {
+  message DadosPorPixId{
+    string clienteId = 1;
+    string pixId = 2;
+  }
+  // um ou outro
+  oneof filtro {
+    DadosPorPixId pixId = 1;
+    string chave = 2;
+  }
+}
+
+message DadosChavePixGrpcResponse {
+  message DadosChavePix{
+
+    message DadosConta{
+      TipoDeConta tipo = 1;
+      string instituicao = 2;
+      string nomeDoTitular = 3;
+      string cpfDoTitular = 4;
+      string agencia = 5;
+      string numeroDaConta = 6;
+    }
+
+    TipoDeChave tipo = 1;
+    string chave = 2;
+    DadosConta conta = 3;
+    google.protobuf.Timestamp criadaEm = 4;
+  }
+  string idCliente = 1;
+  string idPix = 2;
+  DadosChavePix chavePix = 3;
+}
 
 message DadosDeConsultaGrpcInternoRequest {
   string idCliente = 1;

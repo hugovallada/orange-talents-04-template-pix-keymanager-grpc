@@ -26,4 +26,6 @@ class ChavePix(
     @Id @GeneratedValue
     var id: UUID? = null
     var criadaEm: LocalDateTime? = null // TODO: Data
+
+    fun pertenceAo(clienteId: UUID) = this.clienteId == clienteId
 }

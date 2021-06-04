@@ -50,7 +50,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
     implementation("io.micronaut.xml:micronaut-jackson-xml")
-
+    implementation("org.apache.commons:commons-csv:1.5")
 
 
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")

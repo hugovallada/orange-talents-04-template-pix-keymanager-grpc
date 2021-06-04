@@ -1,24 +1,28 @@
-package br.com.zup.hugovallada.externo.bcb
+package br.com.zup.hugovallada.pix.consulta.consultando
 
+import br.com.zup.hugovallada.DadosChavePixGrpcResponse
 import br.com.zup.hugovallada.conta.Conta
-import br.com.zup.hugovallada.pix.consulta.consultando.DadosDaPix
-import br.com.zup.hugovallada.pix.consulta.consultando.Instituicoes
+import br.com.zup.hugovallada.externo.bcb.AccountType
+import br.com.zup.hugovallada.externo.bcb.BankAccount
+import br.com.zup.hugovallada.externo.bcb.KeyType
+import br.com.zup.hugovallada.externo.bcb.Owner
 import java.time.LocalDateTime
 
-data class PixDetailResponse(
-    val keyType:String,
+data class DadosPixKeyResponse (
+    val keyType: KeyType,
     val key: String,
     val bankAccount: BankAccount,
     val owner: Owner,
     val createdAt: LocalDateTime
-){
-    fun toModel() : DadosDaPix{
+        ) {
+
+    fun toModel(): DadosDaPix{
         return DadosDaPix(
-            tipo = KeyType.toTipoChave(keyType = KeyType.valueOf(keyType)),
+            tipo = KeyType.toTipoChave(keyType),
             chave = key,
             tipoDeConta = AccountType.toTipoConta(bankAccount.accountType),
             conta = Conta(
-                instituicao = Instituicoes.nome(participant = bankAccount.participant),
+                instituicao = Instituicoes.nome(bankAccount.participant),
                 nomeDoTitular = owner.name,
                 cpfDoTitular = owner.taxIdNumber,
                 agencia = bankAccount.branch,
