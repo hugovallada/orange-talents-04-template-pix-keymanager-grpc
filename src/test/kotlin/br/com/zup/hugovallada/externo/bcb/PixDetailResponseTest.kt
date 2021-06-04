@@ -29,8 +29,6 @@ internal class PixDetailResponseTest {
 
         val chave = pixDetailResponse.toModel()
 
-        println(chave.conta.instituicao)
-
         assertTrue(chave.conta.cpfDoTitular == pixDetailResponse.owner.taxIdNumber)
         assertTrue(chave.conta.instituicao == "ITAÚ UNIBANCO S.A.")
     }

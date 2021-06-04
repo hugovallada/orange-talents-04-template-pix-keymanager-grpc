@@ -155,7 +155,6 @@ internal class ConsultaPixKeyEndpointTest(
         Mockito.`when`(bcbClient.buscarChave(request.chave))
             .thenReturn(HttpResponse.ok(geraPixDetailResponse()))
 
-        Thread.sleep(1000)
         val response = grpcClient.consultarChave(request)
         assertTrue(response.chavePix.chave =="email@email.com")
     }

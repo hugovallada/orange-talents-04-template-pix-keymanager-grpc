@@ -11,6 +11,8 @@ import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -26,14 +28,13 @@ internal class ListagemPixEndpointTest(
 ){
 
     @Test
-    internal fun `deve retornar uma lista com 5 valores`() {
+    internal fun `deve retornar uma lista com as chaves`() {
         insereBatch()
         val response = grpcClient.listarChaves(IdDoClienteGrpcRequest.newBuilder()
             .setId("c56dfef4-7901-44fb-84e2-a2cefb157890").build())
 
         assertTrue(response.chavesList.size == 5)
         assertFalse(response.chavesList.isEmpty())
-
     }
 
     @Test

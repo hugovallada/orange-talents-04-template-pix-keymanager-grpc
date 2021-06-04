@@ -237,7 +237,6 @@ internal class ChavePixEndpointTest(
     internal fun `deve deletar uma chave e retornar um status true`(){
         val chave = geraChavePix()
         repository.save(chave)
-        Thread.sleep(1000)
 
         Mockito.`when`(erpClient.buscarClientePorId("c56dfef4-7901-44fb-84e2-a2cefb157890"))
             .thenReturn(
@@ -256,7 +255,6 @@ internal class ChavePixEndpointTest(
                 .setIdPix(chave.id.toString()).build()
         )
 
-        Thread.sleep(1000)
         assertEquals("Chave Pix ${chave.chave} deletada com sucesso", response.mensagem)
         assertFalse(repository.existsById(chave.id!!))
     }
