@@ -18,6 +18,27 @@ service SearchPixKeyService {
   rpc consultarChave(DadosDeConsultaGrpcRequest) returns (DadosChavePixGrpcResponse){}
 }
 
+service ListPixKeyService{
+  rpc listarChaves(IdDoClienteGrpcRequest) returns (ListaPixGrpcResponse){}
+}
+
+message IdDoClienteGrpcRequest{
+  string id = 1;
+}
+
+message ListaPixGrpcResponse{
+  message ChavePixResponse{
+    string pixId = 1;
+    string clienteId = 2;
+    string valor = 3;
+    TipoDeChave tipo = 4;
+    TipoDeConta tipoConta = 5;
+    google.protobuf.Timestamp criadaEm = 6;
+  }
+
+  repeated ChavePixResponse chavePix = 1;
+}
+
 message DadosDeConsultaGrpcRequest {
   message DadosPorPixId{
     string clienteId = 1;
