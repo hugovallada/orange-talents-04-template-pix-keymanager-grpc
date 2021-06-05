@@ -44,7 +44,7 @@ internal class CadastraChavePixRequestTest {
 
     @ParameterizedTest
     @CsvSource(value = [
-        "EMAIL, email@email","TELEFONE_CELULAR, +551189829282","CPF, 4893922212"
+        "EMAIL, email@email","TELEFONE_CELULAR, +551189829282","CPF, 40530913062"
     ])
     internal fun `deve retornar uma chave pix com uma chave com valor quando o tipo nao for aleatorio`(tipo: String, chave: String) {
         val chavePixRequest = CadastraChavePixRequest(

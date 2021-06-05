@@ -49,6 +49,7 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
+    implementation("org.hibernate:hibernate-validator:6.1.6.Final")
     implementation("io.micronaut.xml:micronaut-jackson-xml")
     implementation("org.apache.commons:commons-csv:1.5")
 

@@ -5,12 +5,11 @@ import br.com.zup.hugovallada.pix.CadastraChavePixRequest
 import io.micronaut.core.annotation.AnnotationValue
 import io.micronaut.validation.validator.constraints.ConstraintValidator
 import io.micronaut.validation.validator.constraints.ConstraintValidatorContext
-import io.micronaut.validation.validator.constraints.EmailValidator
-import java.lang.IllegalStateException
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator
+import org.hibernate.validator.internal.constraintvalidators.hv.br.CPFValidator
 import javax.inject.Singleton
 import javax.validation.Constraint
 import javax.validation.Payload
-import javax.validation.constraints.Email
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.TYPE
@@ -37,7 +36,10 @@ class ValidPixKeyValidator : ConstraintValidator<ValidPixKey, CadastraChavePixRe
         if(value.chave.isNullOrBlank() && value.tipo != TipoDeChave.CHAVE_ALEATORIA) return false
 
         if(value.tipo == TipoDeChave.EMAIL){
-            return value.chave!!.matches("[a-zA-Z0-9]+@[a-z]+\\.[a-zA-Z.]*".toRegex())
+            return EmailValidator().run {
+                initialize(null)
+                isValid(value.chave, null)
+            }
         }
 
         if(value.tipo == TipoDeChave.TELEFONE_CELULAR){
@@ -45,7 +47,10 @@ class ValidPixKeyValidator : ConstraintValidator<ValidPixKey, CadastraChavePixRe
         }
 
         if(value.tipo == TipoDeChave.CPF){
-            return value.chave!!.matches("[0-9]+".toRegex())
+            return value.chave!!.matches("^[0-9]{11}\$".toRegex()) && CPFValidator().run {
+                initialize(null)
+                isValid(value.chave, null)
+            }
         }
 
 
